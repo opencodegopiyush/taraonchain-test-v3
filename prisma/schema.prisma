@@ -1,0 +1,25 @@
+// Prisma schema — taraonchain investigation archive.
+// Provider is PostgreSQL: on Vercel the app runs on serverless functions,
+// where a local SQLite file would be wiped on every restart. Vercel
+// Postgres (Neon) keeps published investigations persistent.
+// Local dev: any PostgreSQL URL in DATABASE_URL works.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Uploaded investigation dossiers (admin template output + agent publishes)
+model Investigation {
+  id        String   @id @default(cuid())
+  caseId    String   @unique
+  codename  String
+  status    String   @default("ACTIVE")
+  payload   String // JSON-serialised DossierFile
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
