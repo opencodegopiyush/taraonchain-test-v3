@@ -5,14 +5,14 @@ import { useStore } from "@/lib/store";
 import { EPI_COLORS, EPI_LABEL, KIND_LABEL, NODE_COLORS } from "@/lib/palette";
 import type { CaseFile, Chapter } from "@/lib/types";
 
-/* ── chapter reader — v16: the case IS a document ────────────
-   every chapter is one continuous article section. the page
-   scrolls like a dossier; a scrollspy (one IntersectionObserver
-   on a centre band) tells the store which chapter you're
-   reading, and the sticky trace plate eases its camera to that
-   chapter's authored view. reading drives the graph — the
-   inverse of every previous build, where buttons drove text.
-   no entrance animation: the words are simply there. */
+/* ── chapter reader — v18 "SPLIT": the report half ──────────
+   the report lives in its OWN half of the terminal and
+   scrolls inside itself (the plate never moves away). a
+   scrollspy — one IntersectionObserver rooted to this very
+   pane — tells the store which chapter you're reading, and
+   the trace plate eases its camera to that chapter's authored
+   view. reading drives the graph. no entrance animation: the
+   words are simply there. */
 
 export default function ChapterReader() {
   const cf = useStore((s) => s.caseFile);
@@ -20,7 +20,10 @@ export default function ChapterReader() {
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  /* ── scrollspy — one observer, one centre band, no math ── */
+  /* ── scrollspy — one observer, one centre band, no math ──
+     the ROOT is this pane: the band is measured against the
+     report half, not the window (v16 measured the window —
+     that broke the moment the report got its own box). */
   useEffect(() => {
     const root = wrapRef.current;
     if (!root) return;
@@ -34,16 +37,19 @@ export default function ChapterReader() {
           if (useStore.getState().chapter !== idx) setChapter(idx);
         }
       },
-      /* a narrow band across the middle of the viewport: the
+      /* a narrow band across the middle of the PANE: the
          section crossing it is the one you're reading */
-      { rootMargin: "-42% 0px -42% 0px", threshold: 0 },
+      { root, rootMargin: "-40% 0px -40% 0px", threshold: 0 },
     );
     sections.forEach((s) => io.observe(s));
     return () => io.disconnect();
   }, [cf, setChapter]);
 
   return (
-    <div ref={wrapRef} className="min-w-0 flex-1">
+    <div
+      ref={wrapRef}
+      className="slim-scroll h-full overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]"
+    >
       <CaseHead cf={cf} />
       {cf.chapters.map((ch, i) => (
         <ChapterSection key={ch.id} cf={cf} ch={ch} idx={i} />
@@ -94,7 +100,7 @@ function ChapterSection({ cf, ch, idx }: { cf: CaseFile; ch: Chapter; idx: numbe
     <section
       data-ch={idx}
       id={`ch-${idx}`}
-      className="scroll-mt-[calc(48px+44svh+38px)] border-t border-[var(--line-strong)] px-5 py-12 sm:px-10 lg:scroll-mt-16 lg:px-14 lg:py-16"
+      className="border-t border-[var(--line-strong)] px-5 py-10 sm:px-10 lg:px-14 lg:py-14"
     >
       {/* chapter head + body — the number is a margin figure,
           the column reads beside it on every screen size */}
@@ -177,7 +183,7 @@ function CaseEnd({ cf }: { cf: CaseFile }) {
   const home = useStore((s) => s.home);
   const setOverlay = useStore((s) => s.setOverlay);
   return (
-    <footer className="border-t border-[var(--line-strong)] px-5 py-14 sm:px-10 lg:px-14">
+    <footer className="border-t border-[var(--line-strong)] px-5 py-12 sm:px-10 lg:px-14">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="label">END OF FILE · {cf.id}</p>

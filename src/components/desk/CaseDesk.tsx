@@ -5,16 +5,19 @@ import { useStore } from "@/lib/store";
 import TraceCanvas from "@/engine/TraceCanvas";
 import TopBar from "./TopBar";
 import ChapterReader from "./ChapterReader";
-import Inspector from "./Inspector";
+import Inspector, { EntityPane } from "./Inspector";
 
-/* ── case desk — v17 reader layout ───────────────────────
-   the case is a document: the trace plate is a STICKY
-   figure on the left (desktop) / top (mobile); the chapters
-   scroll past it like pages. scrolling IS navigation — the
-   scrollspy in ChapterReader retargets the authored chapter
-   cameras as you read. v17 mobile: legend chrome comes off
-   the small plate (decluttered) and the inspector becomes a
-   full bottom sheet — see Inspector.tsx. */
+/* ── case desk — v18 "SPLIT" ─────────────────────────────────
+   the report stops being a scrolling page with a figure glued
+   to it. the desk is a fixed TERMINAL cut exactly 50/50:
+   · the trace plate owns the top half (left half on desktop)
+   · the report owns the other half
+   both are always on screen; neither ever covers the other.
+   the reader scrolls INSIDE its half and the scrollspy
+   retargets the authored chapter cameras as you read.
+   tapping a bubble swaps the report half to that entity's
+   full record (EntityPane) while the plate keeps running
+   above it — ✕ returns to the report where you left off. */
 
 export default function CaseDesk() {
   const cf = useStore((s) => s.caseFile);
@@ -25,57 +28,55 @@ export default function CaseDesk() {
   }, []);
 
   return (
-    <div className="relative min-h-[100dvh] bg-background">
+    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
       <TopBar />
 
-      <div className="flex w-full flex-col items-start lg:flex-row">
-        {/* ── the plate — a sticky figure, framed like a print ── */}
-        <div className="sticky top-12 z-20 w-full shrink-0 border-b border-[var(--line-strong)] lg:h-[calc(100dvh-48px)] lg:w-[54%] lg:border-b-0 lg:border-r">
-          <div className="relative h-[44svh] w-full lg:h-full">
-            <TraceCanvas />
+      <div className="flex min-h-0 w-full flex-1 flex-col lg:flex-row">
+        {/* ── the plate — the upper (left) half, always live ── */}
+        <div className="relative h-1/2 w-full shrink-0 border-b border-[var(--line-strong)] lg:h-full lg:w-1/2 lg:border-b-0 lg:border-r">
+          <TraceCanvas />
 
-            {/* fig caption — top left, with the mobile touch hint */}
-            <div className="pointer-events-none absolute left-3 top-3 z-10">
-              <p className="mono bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3">
-                FIG. {cf.id} · TRACE PLATE
-              </p>
-              <p className="mono mt-1 bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3 lg:hidden">
-                TAP A NODE · PINCH TO ZOOM
-              </p>
-            </div>
-
-            {/* legend — desktop only; it crowds the small mobile plate */}
-            <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-5 lg:left-5 lg:flex">
-              <div className="flex flex-col gap-1 bg-[var(--paper)] px-2.5 py-2">
-                <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#111113" }} />
-                  OBSERVED
-                </span>
-                <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#2440f5" }} />
-                  ASSESSED
-                </span>
-                <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#a6a6ad" }} />
-                  UNKNOWN
-                </span>
-              </div>
-            </div>
-
-            <Recenter />
-
-            {/* chapter ruler — the plate's bottom edge doubles as
-                the table of contents; tap to scroll the reader */}
-            <Ruler />
-
-            <Inspector />
+          {/* fig caption + touch hint */}
+          <div className="pointer-events-none absolute left-3 top-3 z-10">
+            <p className="mono bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3">
+              FIG. {cf.id} · TRACE PLATE
+            </p>
+            <p className="mono mt-1 bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3 lg:hidden">
+              TAP A NODE · PINCH TO ZOOM
+            </p>
           </div>
+
+          {/* legend — desktop only; it crowds a half-height mobile plate */}
+          <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-5 lg:left-5 lg:flex">
+            <div className="flex flex-col gap-1 bg-[var(--paper)] px-2.5 py-2">
+              <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
+                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#111113" }} />
+                OBSERVED
+              </span>
+              <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
+                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#2440f5" }} />
+                ASSESSED
+              </span>
+              <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
+                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#a6a6ad" }} />
+                UNKNOWN
+              </span>
+            </div>
+          </div>
+
+          <Recenter />
+
+          {/* chapter ruler — the plate's bottom edge (the 50/50
+              seam) doubles as the table of contents */}
+          <Ruler />
+
+          <Inspector />
         </div>
 
-        {/* ── the reader — chapters scroll past the figure; the
-            WINDOW scrolls, the plate sticks — same on every device */}
-        <div className="min-w-0 flex-1">
+        {/* ── the report — the other half; scrolls inside itself ── */}
+        <div className="relative min-h-0 min-w-0 flex-1">
           <ChapterReader />
+          <EntityPane />
         </div>
       </div>
     </div>
@@ -95,7 +96,7 @@ function Recenter() {
   );
 }
 
-/* the ruler — chapter numbers printed along the plate's base */
+/* the ruler — chapter numbers printed along the 50/50 seam */
 function Ruler() {
   const cf = useStore((s) => s.caseFile);
   const chapter = useStore((s) => s.chapter);
@@ -115,8 +116,8 @@ function Ruler() {
             aria-selected={active}
             aria-label={`Scroll to chapter ${c.no}: ${c.title}`}
             onClick={() => {
-              /* scrolling is navigation: aim the reader at the
-                 section and the scrollspy does the rest */
+              /* scrolling is navigation: aim the reader pane at
+                 the section and the scrollspy does the rest */
               document
                 .getElementById(`ch-${i}`)
                 ?.scrollIntoView({ behavior: "smooth", block: "start" });

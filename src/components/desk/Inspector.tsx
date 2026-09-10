@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import {
   EPI_COLORS,
@@ -13,13 +13,16 @@ import {
 } from "@/lib/palette";
 import type { CaseEdge, CaseNode } from "@/lib/types";
 
-/* ── entity inspector — v17 ─────────────────────────────
-   desktop: a floating card on the plate's left edge — like a
-   specimen label pinned next to the evidence (unchanged).
-   mobile: a FULL bottom sheet — 86dvh, scrimmed, body scroll
-   locked while open. v16's 38svh card clipped the record in
-   half; the sheet shows the whole file with room to scroll.
-   drag down to dismiss, ✕ or scrim tap also close.
+/* ── entity record — v18 "SPLIT" ─────────────────────────────
+   ONE record, TWO shells:
+   · desktop — floating specimen card pinned inside the plate
+     half (unchanged from v16).
+   · mobile — the terminal swap: selecting a bubble replaces
+     the REPORT half with the entity's full record while the
+     trace plate keeps owning the upper half. the graph never
+     leaves sight; tap another bubble to compare, ✕ returns to
+     the report exactly where you left it. v17's covering
+     sheet is retired — nothing covers the graph anymore.
 
    ── v8 copy — works on mobile + plain http ──
    navigator.clipboard only exists in secure contexts. over
@@ -54,43 +57,167 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export default function Inspector() {
+/* ── shared record state ───────────────────────────────────── */
+
+function useSelected() {
   const node = useStore((s) => s.caseFile.nodes.find((n) => n.id === s.selectedNodeId));
   const cf = useStore((s) => s.caseFile);
   const close = () => useStore.getState().selectNode(null);
-
-  if (!node) return null;
-  return <Card key={node.id} node={node} cf={cf} close={close} />;
+  return { node, cf, close };
 }
 
-function Card({
-  node,
-  cf,
-  close,
+function useCopy() {
+  const [copied, setCopied] = useState<string | null>(null);
+  const [copyFail, setCopyFail] = useState<string | null>(null);
+  const copy = async (text: string, tag: string) => {
+    const ok = await copyText(text);
+    if (ok) {
+      setCopied(tag);
+      setCopyFail(null);
+      setTimeout(() => setCopied(null), 1200);
+    } else {
+      /* even on total failure, say so — never a dead button */
+      setCopyFail(tag);
+      setTimeout(() => setCopyFail(null), 1400);
+    }
+  };
+  return { copy, copied, copyFail };
+}
+
+/* ── the record chrome shared by both shells ───────────────── */
+
+function Identity({ node }: { node: CaseNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span
+          className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+          style={{ background: NODE_COLORS[node.kind] }}
+        />
+        <h3 className="disp min-w-0 flex-1 text-[17px] font-semibold leading-tight text-ink lg:text-[20px]">
+          {node.label}
+        </h3>
+      </div>
+      <button
+        onClick={() => useStore.getState().selectNode(null)}
+        className="flex h-10 w-10 shrink-0 items-center justify-center text-[14px] text-mute transition-colors hover:text-ink"
+        aria-label="Close inspector"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function Tags({ node }: { node: CaseNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="chip">{KIND_LABEL[node.kind]}</span>
+      <span
+        className="chip"
+        style={{ color: RISK_COLORS[node.risk], borderColor: RISK_COLORS[node.risk] }}
+      >
+        RISK · {RISK_LABEL[node.risk]}
+      </span>
+      {node.key && (
+        <span className="chip" style={{ color: "var(--signal)", borderColor: "var(--signal)" }}>
+          ★ KEY ENTITY
+        </span>
+      )}
+    </div>
+  );
+}
+
+function TabsRow({
+  tab,
+  setTab,
+  links,
+  txns,
 }: {
-  node: CaseNode;
-  cf: ReturnType<typeof useStore.getState>["caseFile"];
-  close: () => void;
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  links: number;
+  txns: number;
 }) {
+  const tabs: [Tab, string, number | null][] = [
+    ["overview", "OVERVIEW", null],
+    ["links", "LINKS", links],
+    ["txns", "TXNS", txns],
+  ];
+  return (
+    <div className="hairline-b flex shrink-0 gap-1 px-3">
+      {tabs.map(([id, label, count]) => {
+        const active = tab === id;
+        return (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            aria-selected={active}
+            className="tab flex items-center gap-1.5"
+          >
+            {label}
+            {count !== null && (
+              <span
+                className="rounded-sm px-1 text-[9px] tabular-nums"
+                style={{
+                  background: active ? "rgba(36,64,245,0.1)" : "rgba(17,17,19,0.06)",
+                  color: active ? "var(--signal-deep)" : "var(--faint)",
+                }}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── the desktop shell — floating specimen card, plate half ── */
+
+export default function Inspector() {
+  const { node, cf } = useSelected();
+  if (!node) return null;
+  return (
+    <aside
+      key={node.id}
+      className="absolute bottom-5 left-5 top-5 z-40 hidden w-[340px] flex-col overflow-hidden border lg:flex"
+      style={{
+        background: "var(--paper-2)",
+        borderColor: "var(--line-strong)",
+        boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
+      }}
+    >
+      <Record node={node} cf={cf} />
+    </aside>
+  );
+}
+
+/* ── the mobile shell — the swap pane: fills the REPORT half ── */
+
+export function EntityPane() {
+  const { node, cf } = useSelected();
+  if (!node) return null;
+  return (
+    <div
+      key={node.id}
+      className="fade-in absolute inset-0 z-30 flex flex-col bg-[var(--paper)] lg:hidden"
+      role="complementary"
+      aria-label="Entity record"
+    >
+      <Record node={node} cf={cf} swapHint />
+    </div>
+  );
+}
+
+/* ── the record itself (header · tags · tabs · body) ───────── */
+
+function Record({ node, cf, swapHint }: { node: CaseNode; cf: CaseFileT; swapHint?: boolean }) {
   const [tab, setTab] = useState<Tab>("overview");
   /* per-case unit — never hardcode a chain: SLINK is ETH, SHARAV is SOL */
   const unit = cf.unit ?? "ETH";
-  const [dragY, setDragY] = useState<number | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
-  const startY = useRef(0);
-  const dragging = useRef(false);
-
-  /* mobile sheet: lock the page behind it while it's open —
-     the record reads like its own page, not a card fighting
-     the scroll underneath. desktop never locks. */
-  useEffect(() => {
-    if (window.innerWidth >= 1024) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  const { copy, copied, copyFail } = useCopy();
 
   const conns = useMemo(
     () =>
@@ -111,147 +238,39 @@ function Card({
     [conns],
   );
 
-  const [copyFail, setCopyFail] = useState<string | null>(null);
-
-  const copy = async (text: string, tag: string) => {
-    const ok = await copyText(text);
-    if (ok) {
-      setCopied(tag);
-      setCopyFail(null);
-      setTimeout(() => setCopied(null), 1200);
-    } else {
-      /* even on total failure, say so — never a dead button */
-      setCopyFail(tag);
-      setTimeout(() => setCopyFail(null), 1400);
-    }
-  };
-
-  const onDown = (e: React.PointerEvent) => {
-    if (window.innerWidth >= 1024) return;
-    /* never hijack presses on buttons inside the handle zone —
-       pointer capture would swallow their click */
-    if ((e.target as HTMLElement).closest("button")) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    startY.current = e.clientY;
-    dragging.current = true;
-  };
-  const onMove = (e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    setDragY(Math.max(0, e.clientY - startY.current));
-  };
-  const onUp = () => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    if (dragY !== null && dragY > 56) close();
-    setDragY(null);
-  };
-
-  const tabs: [Tab, string, number | null][] = [
-    ["overview", "OVERVIEW", null],
-    ["links", "LINKS", conns.length],
-    ["txns", "TXNS", txs.length],
-  ];
-
   return (
     <>
-      {/* mobile scrim — tap to dismiss (desktop: none, the card
-          floats beside the evidence) */}
-      <button
-        aria-label="Close inspector"
-        onClick={close}
-        className="fade-in fixed inset-0 z-40 cursor-default bg-[rgba(17,17,19,0.32)] lg:hidden"
-      />
-
-      <aside
-        className="t4-spring fixed inset-x-0 bottom-0 z-50 flex h-[min(86dvh,760px)] flex-col overflow-hidden rounded-t-[16px] border-t lg:absolute lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-5 lg:z-40 lg:h-auto lg:w-[340px] lg:max-h-[calc(100%-40px)] lg:rounded-t-none lg:border"
-        style={{
-          background: "var(--paper-2)",
-          borderColor: "var(--line-strong)",
-          boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
-          transform: dragY !== null ? `translateY(${dragY}px)` : undefined,
-          transition: dragY !== null ? "none" : undefined,
-        }}
-      >
-      {/* grab handle + header */}
-      <div
-        className="hairline-b shrink-0 cursor-grab touch-none px-4 pb-2 pt-2 active:cursor-grabbing lg:cursor-default"
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-      >
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[rgba(17,17,19,0.25)] lg:hidden" />
-        <div className="flex items-start justify-between gap-3 pt-1">
-          <span
-            className="mt-2 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ background: NODE_COLORS[node.kind] }}
-          />
-          <h3 className="disp min-w-0 flex-1 text-[20px] font-semibold leading-tight text-ink">
-            {node.label}
-          </h3>
-          <button
-            onClick={close}
-            className="flex h-9 w-9 shrink-0 items-center justify-center text-[14px] text-mute transition-colors hover:text-ink"
-            aria-label="Close inspector"
-          >
-            ✕
-          </button>
+      {/* header */}
+      <div className="hairline-b shrink-0 px-4 pb-2.5 pt-3">
+        <Identity node={node} />
+        <div className="mt-2">
+          <Tags node={node} />
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pb-2.5">
-          <span className="chip">{KIND_LABEL[node.kind]}</span>
-          <span className="chip" style={{ color: RISK_COLORS[node.risk], borderColor: RISK_COLORS[node.risk] }}>
-            RISK · {RISK_LABEL[node.risk]}
-          </span>
-          {node.key && (
-            <span className="chip" style={{ color: "var(--signal)", borderColor: "var(--signal)" }}>
-              ★ KEY ENTITY
-            </span>
-          )}
-        </div>
+        {swapHint && (
+          <p className="mono mt-2 text-[8.5px] tracking-[0.18em] text-faint">
+            TAP ANOTHER BUBBLE TO COMPARE · ✕ RETURNS TO THE REPORT
+          </p>
+        )}
       </div>
 
-      {/* tabs */}
-      <div className="hairline-b flex shrink-0 gap-1 px-3">
-        {tabs.map(([id, label, count]) => {
-          const active = tab === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              aria-selected={active}
-              className="tab flex items-center gap-1.5"
-            >
-              {label}
-              {count !== null && (
-                <span
-                  className="rounded-sm px-1 text-[9px] tabular-nums"
-                  style={{
-                    background: active ? "rgba(36,64,245,0.1)" : "rgba(17,17,19,0.06)",
-                    color: active ? "var(--signal-deep)" : "var(--faint)",
-                  }}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <TabsRow tab={tab} setTab={setTab} links={conns.length} txns={txs.length} />
 
       {/* body */}
-      <div className="slim-scroll flex-1 overflow-y-auto px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 lg:pb-4">
+      <div className="slim-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 lg:pb-4">
         {tab === "overview" && (
           <Overview node={node} copy={copy} copied={copied} copyFail={copyFail} />
         )}
         {tab === "links" && <Links conns={conns} unit={unit} />}
-        {tab === "txns" && <Txns txs={txs} unit={unit} copy={copy} copied={copied} copyFail={copyFail} />}
+        {tab === "txns" && (
+          <Txns txs={txs} unit={unit} copy={copy} copied={copied} copyFail={copyFail} />
+        )}
       </div>
-    </aside>
     </>
   );
 }
 
 type Tab = "overview" | "links" | "txns";
+type CaseFileT = ReturnType<typeof useStore.getState>["caseFile"];
 
 function Overview({
   node,
