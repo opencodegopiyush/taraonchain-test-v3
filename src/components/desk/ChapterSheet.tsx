@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { EPI_COLORS, EPI_LABEL, NODE_COLORS, KIND_LABEL } from "@/lib/palette";
 
-/* ── chapter dossier ─────────────────────────────────────────
+/* ── chapter sheet — v15: the reading column ─────────────────
+   desktop: permanent RIGHT column on paper. paragraphs arrive
+   with the plotter wipe. facts are printed as footnotes — a
+   coloured rule, a small caps tag, plain paper behind.
    mobile: drag-snap bottom sheet (peek 132 / 48dvh / 88dvh),
-   paragraphs declassify with a gold sweep when expanded.
-   desktop: permanent left column, same content, no drag. */
+   same content, same snap physics as v13. */
 
 const PEEK = 132;
 
@@ -17,7 +19,6 @@ export default function ChapterSheet() {
   const setChapter = useStore((s) => s.setChapter);
   const next = useStore((s) => s.nextChapter);
   const prev = useStore((s) => s.prevChapter);
-  const selectNode = useStore((s) => s.selectNode);
   const selected = useStore((s) => s.selectedNodeId);
 
   const [snap, setSnap] = useState<0 | 1 | 2>(0);
@@ -76,11 +77,9 @@ export default function ChapterSheet() {
         className={`t4-spring absolute inset-x-0 bottom-0 z-30 flex flex-col overflow-hidden rounded-t-[14px] border-t lg:hidden ${selected ? "pointer-events-none translate-y-full" : ""}`}
         style={{
           height: heights[snap],
-          background: "var(--panel-deep)",
+          background: "var(--paper-2)",
           borderColor: "var(--line-strong)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          boxShadow: "0 -14px 48px rgba(3,2,1,0.66)",
+          boxShadow: "0 -14px 48px rgba(23, 21, 14, 0.16)",
           transform:
             dragY !== null ? `translateY(${dragY * 0.55}px)` : undefined,
           transition: dragY !== null ? "none" : undefined,
@@ -97,15 +96,15 @@ export default function ChapterSheet() {
             if (!moved.current && snap === 0) setSnap(1);
           }}
         >
-          <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-[rgba(232,193,90,0.3)]" />
+          <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-[rgba(23,21,14,0.25)]" />
           <div className="flex items-center gap-2">
-            <span className="mono shrink-0 text-[10px] font-bold tracking-[0.2em] text-gold">
+            <span className="mono shrink-0 text-[10px] font-semibold tracking-[0.2em] text-signal">
               CH {ch.no}
             </span>
             <span className="label flex-1 truncate text-center">
-              {snap === 0 ? "SWIPE ↑ TO DECLASSIFY" : ""}
+              {snap === 0 ? "SWIPE ↑ TO READ" : ""}
             </span>
-            {/* v8 — chapter stepper on the sheet itself: switchable
+            {/* chapter stepper on the sheet itself: switchable
                 while reading, thumb-reachable, no trip to the top bar */}
             <div className="flex shrink-0 items-center gap-1">
               <button
@@ -114,9 +113,9 @@ export default function ChapterSheet() {
                 aria-label="Previous chapter"
                 className="mono flex h-8 w-8 items-center justify-center border text-[13px] transition-colors disabled:opacity-30"
                 style={{
-                  borderColor: chapter === 0 ? "var(--line)" : "rgba(227,185,92,0.4)",
-                  color: chapter === 0 ? "var(--faint)" : "var(--gold-hi)",
-                  background: "rgba(10,8,5,0.5)",
+                  borderColor: "var(--line-strong)",
+                  color: chapter === 0 ? "var(--faint)" : "var(--ink)",
+                  background: "var(--paper)",
                 }}
               >
                 ‹
@@ -130,11 +129,10 @@ export default function ChapterSheet() {
                 aria-label="Next chapter"
                 className="mono flex h-8 w-8 items-center justify-center border text-[13px] transition-colors disabled:opacity-30"
                 style={{
-                  borderColor:
-                    chapter === cf.chapters.length - 1 ? "var(--line)" : "rgba(227,185,92,0.4)",
+                  borderColor: "var(--line-strong)",
                   color:
-                    chapter === cf.chapters.length - 1 ? "var(--faint)" : "var(--gold-hi)",
-                  background: "rgba(227,185,92,0.08)",
+                    chapter === cf.chapters.length - 1 ? "var(--faint)" : "var(--ink)",
+                  background: "var(--paper)",
                 }}
               >
                 ›
@@ -142,7 +140,7 @@ export default function ChapterSheet() {
             </div>
           </div>
           <p className="label mt-1.5 truncate">{ch.kicker}</p>
-          <h3 className="disp mt-0.5 truncate text-[17px] font-bold text-ink">
+          <h3 className="disp mt-0.5 truncate text-[18px] font-semibold text-ink">
             {ch.title}
           </h3>
         </div>
@@ -153,42 +151,40 @@ export default function ChapterSheet() {
         )}
       </div>
 
-      {/* ══ desktop column ══ */}
-      <aside className="panel-deep hairline-r slim-scroll absolute bottom-0 left-0 top-12 z-20 hidden w-[402px] shrink-0 flex-col overflow-y-auto lg:flex">
-        <div className="px-5 pb-4 pt-5">
-          <div className="flex flex-wrap gap-1.5">
+      {/* ══ desktop column — the reading sheet, right side ══ */}
+      <aside className="hairline-l slim-scroll absolute bottom-0 right-0 top-12 z-20 hidden w-[418px] shrink-0 flex-col overflow-y-auto bg-[var(--paper-2)] lg:flex">
+        <div className="px-6 pb-4 pt-6">
+          <div className="flex flex-wrap gap-1">
             {cf.chapters.map((c, i) => {
               const active = i === chapter;
               return (
                 <button
                   key={c.id}
                   onClick={() => setChapter(i)}
-                  className="mono flex h-8 items-center gap-1.5 border px-2.5 text-[10px] tracking-[0.12em] transition-all"
-                  style={{
-                    borderColor: active ? "rgba(227,185,92,0.55)" : "var(--line)",
-                    background: active ? "rgba(227,185,92,0.1)" : "transparent",
-                    color: active ? "var(--gold-hi)" : "var(--faint)",
-                  }}
+                  className="mono relative flex h-8 items-center px-2 text-[10px] tracking-[0.1em] transition-colors"
+                  style={{ color: active ? "var(--ink)" : "var(--faint)" }}
+                  title={c.title}
                 >
-                  <span style={{ color: active ? "var(--gold)" : undefined }}>
-                    {c.no}
-                  </span>
-                  <span className="max-w-[96px] truncate">{c.title}</span>
+                  {c.no}
+                  {active && (
+                    <span className="absolute inset-x-1 bottom-1 h-[2px] bg-signal" />
+                  )}
                 </button>
               );
             })}
           </div>
+          <div className="mt-3 h-px w-full bg-[var(--line)]" />
         </div>
 
-        <div className="hairline-t px-6 py-5">
+        <div className="px-7 pb-6 pt-2">
           <p className="label">{ch.kicker}</p>
-          <h3 className="disp mt-1 text-[24px] font-bold leading-tight text-ink">
+          <h3 className="disp mt-1.5 text-[27px] font-semibold leading-tight text-ink">
             {ch.title}
           </h3>
           <ChapterBody cf={cf} chapter={chapter} active desktop />
         </div>
 
-        <div className="mt-auto flex gap-2 px-6 pb-6 pt-2">
+        <div className="mt-auto flex gap-2 px-7 pb-7 pt-2">
           <button
             className="btn btn-ghost flex-1"
             onClick={prev}
@@ -230,40 +226,43 @@ function ChapterBody({
 
   return (
     <div
-      className={`slim-scroll flex-1 px-4 pb-8 ${mobile ? "overflow-y-auto pt-1" : "overflow-visible pt-4 lg:px-0"}`}
+      className={`slim-scroll flex-1 px-4 pb-8 ${mobile ? "overflow-y-auto pt-1" : "overflow-visible px-0 pt-5"}`}
     >
       {ch.body.map((p, i) => (
-        <Redact key={i} active={active} delay={i * 150}>
+        <Wipe key={i} active={active} delay={i * 140}>
           <p className={`read ${mobile ? "" : "text-[15px]"}`}>{p}</p>
-        </Redact>
+        </Wipe>
       ))}
 
-      {/* facts */}
+      {/* facts — printed as footnotes: rule + small caps tag */}
       {ch.facts.length > 0 && (
-        <div className="mt-5 space-y-2">
+        <div className="mt-6 space-y-2.5">
           <p className="label">FIELD NOTES</p>
           {ch.facts.map((f, i) => (
-            <Redact key={i} active={active} delay={ch.body.length * 150 + i * 90}>
+            <Wipe key={i} active={active} delay={ch.body.length * 140 + i * 80}>
               <div
-                className="flex gap-2.5 border-l-2 bg-[rgba(10,8,5,0.5)] px-3 py-2.5"
-                style={{ borderColor: EPI_COLORS[f.epistemic] }}
+                className="border-l-2 px-3.5 py-2.5"
+                style={{
+                  borderColor: EPI_COLORS[f.epistemic],
+                  background: "var(--paper)",
+                }}
               >
                 <span
-                  className="mono mt-0.5 shrink-0 text-[8.5px] font-bold tracking-[0.14em]"
+                  className="mono mb-1 block text-[8.5px] font-semibold tracking-[0.16em]"
                   style={{ color: EPI_COLORS[f.epistemic] }}
                 >
                   {EPI_LABEL[f.epistemic]}
                 </span>
                 <p className="text-[12.5px] leading-relaxed text-bone">{f.text}</p>
               </div>
-            </Redact>
+            </Wipe>
           ))}
         </div>
       )}
 
       {/* focus entities */}
       {focus.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-7">
           <p className="label mb-2">ENTITIES IN THIS CHAPTER — TAP TO INSPECT</p>
           <div className="flex flex-wrap gap-1.5">
             {focus.map((id) => {
@@ -272,7 +271,7 @@ function ChapterBody({
               return (
                 <button
                   key={id}
-                  className="chip cursor-pointer gap-1.5 transition-colors hover:border-[rgba(232,193,90,0.5)]"
+                  className="chip cursor-pointer gap-1.5 transition-colors hover:border-ink hover:text-ink"
                   onClick={() => selectNode(id)}
                 >
                   <span
@@ -295,7 +294,8 @@ function ChapterBody({
   );
 }
 
-function Redact({
+/* v15 arrival — clip-path wipe, never covers, always lands visible */
+function Wipe({
   active,
   delay,
   children,
@@ -306,7 +306,7 @@ function Redact({
 }) {
   return (
     <div
-      className={`rblock ${active ? "on sweep" : ""}`}
+      className={`wipe ${active ? "on" : ""}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}

@@ -4,114 +4,65 @@ import { useRef } from "react";
 import { useStore, reviewedPct } from "@/lib/store";
 import { CASES } from "@/lib/case-data";
 import type { CaseFile } from "@/lib/types";
-import { TUNE, useDevice } from "@/lib/edition";
-import HeroTrail from "./fx/HeroTrail";
-import EvidenceCloud from "./fx/EvidenceCloud";
-import Scramble from "./fx/Scramble";
-import GoldWord from "./fx/GoldWord";
+import { TUNE } from "@/lib/edition";
+import HalftoneField from "./fx/HalftoneField";
 import { useInView, useCountUp } from "./fx/Reveal";
 
-/* ── v12 landing — the evidence cloud is the brand ─────────
-   the cloud no longer spells a case id. it forms the name
-   itself — TARAONCHAIN — from living gold particles that
-   assemble, scatter under your finger and spring back. no
-   labels, no captions: the band is pure word + interaction.
-   the platform is case-agnostic — many reports, many cases;
-   SHARAV stays only as the latest declassified file below.
-   all v10 rules hold: single auto-tuned build, no HOW IT
-   WORKS, no case-number button, stats welded to the file,
-   decrypt open. */
+/* ── v15 landing — THE INDEX ─────────────────────────────────
+   the archive is now a printed index: warm paper, ruled
+   hairlines, serif case names, one vermilion signal. the
+   halftone field keeps the page alive between readings —
+   touch it and the ink answers. every case is one row of
+   the index; the whole row opens the file. stats stay
+   welded to their case (v14 rule), measured per file. */
 
-function Stat({ v, label, suffix }: { v: number; label: string; suffix?: string }) {
-  const [ref, on] = useInView<HTMLDivElement>(0.5);
+/* per-case card chrome — the one drawdown line + index tag.
+   both lines are report facts, keyed by case id. */
+const CARD_META: Record<
+  string,
+  { tag: string; fill?: boolean; drawdown: string }
+> = {
+  "R-0905": { tag: "LATEST", fill: true, drawdown: "−99.3% FROM PEAK" },
+  "S-0830": { tag: "ARCHIVED", drawdown: "−98.8% FROM PEAK" },
+};
+
+function Stat({ v, label }: { v: number; label: string }) {
+  const [ref, on] = useInView<HTMLDivElement>(0.4);
   const n = useCountUp(v, on, 900);
   return (
-    <div
-      ref={ref}
-      className="flex flex-col items-center gap-1 px-2 py-4 text-center transition-colors duration-200"
-    >
-      <span className="disp text-2xl font-bold text-gold-hi sm:text-3xl">
+    <div ref={ref} className="flex flex-col gap-1">
+      <span className="mono text-[17px] font-semibold tabular-nums text-ink">
         {n}
-        {suffix}
       </span>
       <span className="label">{label}</span>
     </div>
   );
 }
 
-/* v9 decrypt word — cover-free reveal. the word is always in
-   the DOM fully painted; the animation only carries it in
-   (blur + rise). the gold tick beneath is decoration that
-   draws then fades — it can never cover the word. */
-function DecryptWord({
-  children,
-  delay,
+/* ── the index row — the WHOLE ROW is the button (v9 rule) ── */
+function CaseRow({
+  cf,
+  no,
+  last,
 }: {
-  children: React.ReactNode;
-  delay: number;
+  cf: CaseFile;
+  no: string;
+  last?: boolean;
 }) {
-  return (
-    <span
-      className="relative inline-block"
-      style={{ "--d": `${delay}ms` } as React.CSSProperties}
-    >
-      <span className="decrypt-word inline-block">{children}</span>
-      <span aria-hidden className="decrypt-tick" />
-    </span>
-  );
-}
-
-/* v13 — per-case card chrome: archive kicker + the one drawdown line.
-   both lines are report facts, keyed by case id. */
-const CARD_META: Record<string, { kicker: string; drawdown: string }> = {
-  "R-0905": { kicker: "LATEST DECLASSIFICATION", drawdown: "−99.3% FROM PEAK" },
-  "S-0830": { kicker: "PREVIOUSLY DECLASSIFIED", drawdown: "−98.8% FROM PEAK" },
-};
-
-/* the case file card — the WHOLE CARD is the button (v9 rule).
-   stats live inside, welded to that case's own footprint. */
-function CaseCard({ cf, second }: { cf: CaseFile; second?: boolean }) {
   const openCase = useStore((s) => s.openCase);
   const visited = useStore((s) => s.visited);
   const pct = reviewedPct({ visited, caseFile: cf });
-  const meta = CARD_META[cf.id] ?? { kicker: "DECLASSIFIED FILE", drawdown: "" };
+  const meta = CARD_META[cf.id] ?? { tag: "DECLASSIFIED", drawdown: "" };
 
-  const [cardRef, cardOn] = useInView<HTMLDivElement>(0.18);
-  const device = useDevice();
-
-  /* desktop: the case card tilts toward your cursor.
-     transform-only (compositor-friendly), reset on leave. */
-  const tiltRef = useRef<HTMLDivElement | null>(null);
-  const onCardMove = device === "desktop"
-    ? (e: React.PointerEvent) => {
-        const el = tiltRef.current;
-        if (!el || e.pointerType !== "mouse") return;
-        const r = el.getBoundingClientRect();
-        const dx = (e.clientX - r.left) / r.width - 0.5;
-        const dy = (e.clientY - r.top) / r.height - 0.5;
-        el.style.transform = `perspective(900px) rotateX(${(-dy * 2.4).toFixed(2)}deg) rotateY(${(dx * 2.8).toFixed(2)}deg)`;
-      }
-    : undefined;
-  const onCardLeave = device === "desktop"
-    ? () => {
-        const el = tiltRef.current;
-        if (el) el.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
-      }
-    : undefined;
+  const [ref, on] = useInView<HTMLDivElement>(0.14);
+  const rowRef = useRef<HTMLButtonElement | null>(null);
 
   const openFile = () => openCase(cf.id);
 
   return (
-    <div ref={cardRef} className={second ? "mt-14 sm:mt-16" : undefined}>
-      <p className="label mb-4">
-        <Scramble text={meta.kicker} duration={650} />
-      </p>
-
-      <div
-        ref={tiltRef}
-        role="button"
-        tabIndex={0}
-        aria-label={`Open case file ${cf.id} — ${cf.codename}`}
+    <div ref={ref}>
+      <button
+        ref={rowRef}
         onClick={openFile}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -119,116 +70,134 @@ function CaseCard({ cf, second }: { cf: CaseFile; second?: boolean }) {
             openFile();
           }
         }}
-        onPointerMove={onCardMove}
-        onPointerLeave={onCardLeave}
-        className={`panel glow-pulse t4-spring relative cursor-pointer overflow-hidden p-5 fade-up sm:p-8 ${
-          cardOn ? "" : "opacity-0"
-        }`}
+        aria-label={`Open case file ${cf.id} — ${cf.codename}`}
+        className={`group relative block w-full cursor-pointer text-left transition-colors duration-200 hover:bg-[var(--paper-2)] focus-visible:bg-[var(--paper-2)] ${
+          last ? "" : "hairline-b"
+        } ${on ? "" : "opacity-0"}`}
       >
-        {/* stamp */}
-        <div className="absolute right-4 top-4 sm:right-7 sm:top-7">
-          {cardOn && <span className="stamp stamp-in">{cf.status}</span>}
-        </div>
+        {/* hover tick — the signal edge */}
+        <span aria-hidden className="row-tick group-hover:[transform:scaleY(1)]" />
 
-        <p className="label mb-2">
-          CASE {cf.id} · {cf.chains.join(" / ")} · {cf.span}
-        </p>
-        <h2 className="disp text-4xl font-bold tracking-tight text-gold-hi sm:text-6xl">
-          {cf.codename}
-        </h2>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="chip">{cf.amountLabel ?? cf.amountUsd}</span>
-          <span className="chip">{cf.amountUsd}</span>
-          <span className="chip" style={{ color: "var(--ember)" }}>
-            {meta.drawdown}
-          </span>
-        </div>
-
-        <p className="read mt-5">{cf.summary}</p>
-
-        {/* footprint — the stats belong to this file, not the page */}
-        <div className="hairline-t mt-7 pt-5">
-          <p className="label mb-2 flex items-center gap-2">
-            <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-gold" />
-            FOOTPRINT · MEASURED FROM CASE {cf.id} — {cf.codename}
-          </p>
-          <div className="grid grid-cols-2 divide-x divide-[var(--line)] sm:grid-cols-4">
-            <Stat v={cf.stats.entities} label="ENTITIES MAPPED" />
-            <Stat v={cf.stats.hops} label="LINKS TRACED" />
-            <Stat v={cf.chapters.length} label="CHAPTERS" />
-            <Stat v={100} label="TELEMETRY" suffix="% OFF" />
-          </div>
-        </div>
-
-        {/* declassify progress */}
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="label">DECLASSIFIED</span>
-            <span className="mono text-[11px] text-gold">
-              {Math.max(pct, visited.length > 0 ? pct : 0)}%
-              {pct === 0 ? " · UNOPENED" : " REVIEWED"}
+        <div className="wipe on px-1 py-7 sm:px-2 sm:py-9" style={{ "--d": "80ms" } as React.CSSProperties}>
+          {/* index line */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="mono text-[10px] font-semibold tabular-nums tracking-[0.2em] text-faint transition-colors group-hover:text-signal">
+              {no}
+            </span>
+            <span className="label">{cf.id}</span>
+            <span className={meta.fill ? "tag tag-fill" : "tag"}>{meta.tag}</span>
+            <span className="label hidden sm:inline">{cf.status}</span>
+            <span className="ml-auto flex items-center gap-2">
+              <span className="mono text-[10px] font-semibold tracking-[0.18em] text-signal opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100">
+                OPEN FILE
+              </span>
+              <span className="mono text-[13px] text-ink transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-0.5">
+                ↗
+              </span>
             </span>
           </div>
-          <div className="h-[3px] w-full overflow-hidden bg-[rgba(232,193,90,0.12)]">
-            <div
-              className="declassify-bar h-full bg-[linear-gradient(90deg,var(--gold-dim),var(--gold-hi))] transition-all duration-1000"
-              style={{ width: `${Math.max(pct, 8)}%` }}
-            />
+
+          {/* name + verdict figures */}
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            <div className="min-w-0">
+              <h2 className="disp text-[42px] font-semibold leading-[0.98] text-ink sm:text-[64px]">
+                {cf.codename}
+              </h2>
+              <p className="mono mt-2 text-[10.5px] tracking-[0.16em] text-mute">
+                {cf.chains.join(" / ").toUpperCase()} · {cf.span.toUpperCase()}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {cf.amountLabel && (
+                <span className="chip border-ink text-ink">{cf.amountLabel}</span>
+              )}
+              <span className="chip" style={{ color: "var(--signal-deep)", borderColor: "var(--signal)" }}>
+                {cf.amountUsd}
+              </span>
+              {meta.drawdown && (
+                <span className="mono text-[10px] tracking-[0.14em]" style={{ color: "var(--signal-deep)" }}>
+                  {meta.drawdown}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* summary — the file speaks for itself */}
+          <p className="read mt-5 max-w-2xl text-[14.5px] leading-relaxed">{cf.summary}</p>
+
+          {/* footprint — the stats belong to this file, not the page */}
+          <div className="mt-6 border-t border-dashed border-[var(--line-strong)] pt-4">
+            <p className="label mb-3 flex items-center gap-2">
+              <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-signal" />
+              FOOTPRINT · MEASURED FROM CASE {cf.id} — {cf.codename}
+            </p>
+            <div className="grid grid-cols-4 gap-3">
+              <Stat v={cf.stats.entities} label="ENTITIES" />
+              <Stat v={cf.stats.hops} label="LINKS" />
+              <Stat v={cf.chapters.length} label="CHAPTERS" />
+              <Stat v={100} label="% LOCAL" />
+            </div>
+          </div>
+
+          {/* review meter */}
+          <div className="mt-6 flex items-center gap-3">
+            <div className="meter w-40">
+              <span style={{ width: `${Math.max(pct, 3)}%` }} />
+            </div>
+            <span className="mono text-[9.5px] tracking-[0.16em] text-mute">
+              {pct === 0 ? "UNOPENED" : `${pct}% REVIEWED`}
+            </span>
           </div>
         </div>
-
-        {/* the file is the button — no case-number button anymore */}
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <span className="label">TAP ANYWHERE ON THE FILE TO OPEN</span>
-          <span className="mono shrink-0 text-[11px] font-bold tracking-[0.18em] text-gold">
-            OPEN FILE ▸
-          </span>
-        </div>
-      </div>
+      </button>
     </div>
   );
 }
 
 export default function Landing() {
+  const heroRef = useInView<HTMLDivElement>(0.2);
+
   return (
-    <div className="relative min-h-[100svh] overflow-x-clip bg-background">
-      {/* corner chrome */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3 sm:px-6">
-        <span className="mono text-[10px] font-bold tracking-[0.3em] text-bone">
-          TARAONCHAIN
+    <div className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground">
+      {/* ── header ── */}
+      <header className="hairline-b fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-[var(--paper)] px-4 sm:px-8">
+        <span className="mono text-[11px] font-semibold tracking-[0.3em] text-ink">
+          TARAONCHAIN<span className="text-signal">®</span>
         </span>
         <span className="chip">{TUNE.chip}</span>
-      </div>
+      </header>
 
-      {/* ── hero — decrypt open ── */}
-      <section className="scanlines relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-5 pb-16 pt-20 sm:px-8">
-        <HeroTrail className="absolute inset-0 h-full w-full" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(8,7,4,0.72)_100%)]" />
-        <span aria-hidden className="hero-scan" />
+      {/* ── hero — the plotter measures the page once ── */}
+      <section className="relative flex min-h-[94svh] flex-col justify-center overflow-hidden px-5 pb-20 pt-24 sm:px-8">
+        <span aria-hidden className="plotter" />
 
-        <div className="relative z-10 mx-auto w-full max-w-3xl">
-          <p className="label mb-5 fade-up" style={{ animationDelay: "80ms" }}>
-            <Scramble text="ON-CHAIN FORENSICS · CASE ARCHIVE" duration={650} />
+        <div className="mx-auto w-full max-w-3xl">
+          <p className="label arrive mb-6" style={{ "--d": "120ms" } as React.CSSProperties}>
+            ON-CHAIN FORENSICS · INDEPENDENT CASE ARCHIVE
           </p>
 
-          <h1 className="disp font-bold leading-[0.98] tracking-tight text-ink">
-            <span className="block text-[12vw] sm:text-6xl md:text-7xl">
-              <DecryptWord delay={260}>EVERY</DecryptWord>{" "}
-              <DecryptWord delay={400}>CHAIN</DecryptWord>
+          <h1 className="disp font-semibold leading-[1.02] text-ink">
+            <span
+              className="arrive block text-[13.5vw] sm:text-7xl md:text-[86px]"
+              style={{ "--d": "220ms" } as React.CSSProperties}
+            >
+              Every chain
             </span>
-            <span className="block text-[12vw] sm:text-6xl md:text-7xl">
-              <DecryptWord delay={560}>LEAVES</DecryptWord>{" "}
-              <DecryptWord delay={680}>A</DecryptWord>
-            </span>
-            <span className="block text-[15vw] sm:text-7xl md:text-8xl">
-              <DecryptWord delay={860}>
-                <GoldWord>TRAIL.</GoldWord>
-              </DecryptWord>
+            <span
+              className="arrive block text-[13.5vw] sm:text-7xl md:text-[86px]"
+              style={{ "--d": "340ms" } as React.CSSProperties}
+            >
+              leaves a{" "}
+              <em className="font-light italic" style={{ color: "var(--signal)" }}>
+                trail.
+              </em>
             </span>
           </h1>
 
-          <div className="mt-7 max-w-xl fade-up" style={{ animationDelay: "1000ms" }}>
+          <div
+            className="arrive mt-9 max-w-xl"
+            style={{ "--d": "480ms" } as React.CSSProperties}
+          >
             <p className="read text-[15px] sm:text-base">
               The mempool forgets nothing. TARAONCHAIN conducts independent
               on-chain investigations tracing wallets, reconstructing movements
@@ -244,38 +213,54 @@ export default function Landing() {
           </div>
 
           <p
-            className="label mt-10 fade-up caret"
-            style={{ animationDelay: "1300ms" }}
+            className="label arrive mt-12 flex items-center gap-3"
+            style={{ "--d": "620ms" } as React.CSSProperties}
           >
-            DRAG THE BUBBLES — THEY ANSWER
+            <span className="inline-block h-px w-8 bg-signal" />
+            02 CASE FILES · READS ENTIRELY LOCAL · NOTHING LEAVES THIS DEVICE
           </p>
         </div>
 
-        {/* scroll cue */}
         <div className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2">
-          <span className="label deco-blink">▼ SCROLL</span>
+          <span className="label caret">SCROLL — THE ARCHIVE IS OPEN</span>
         </div>
       </section>
 
-      {/* ── the name, alive — no labels, no captions ── */}
-      <section className="hairline-t hairline-b relative h-[190px] overflow-hidden bg-[rgba(10,8,5,0.7)] sm:h-[240px]">
-        <EvidenceCloud className="absolute inset-0 h-full w-full" />
-        <span className="sr-only">TARAONCHAIN</span>
+      {/* ── the halftone field — ink that answers ── */}
+      <section className="hairline-t hairline-b relative h-[190px] overflow-hidden bg-[var(--paper)] sm:h-[230px]">
+        <HalftoneField className="absolute inset-0 h-full w-full" />
+        <span className="label absolute bottom-3 left-5 bg-[var(--paper)] px-2 py-1">
+          TOUCH THE FIELD — IT ANSWERS
+        </span>
       </section>
 
-      {/* ── the archive — every published investigation, newest first ── */}
-      <section className="relative px-5 py-14 sm:px-8 sm:py-20">
+      {/* ── the index — every published investigation ── */}
+      <section className="relative px-5 py-16 sm:px-8 sm:py-20">
         <div className="mx-auto w-full max-w-3xl">
-          {CASES.map((c, i) => (
-            <CaseCard key={c.id} cf={c} second={i > 0} />
-          ))}
+          <div ref={heroRef[0]}>
+            <p className="label">THE ARCHIVE — PUBLISHED CASE FILES</p>
+            <div
+              className={`rule mt-3 ${heroRef[1] ? "on" : ""}`}
+              style={{ "--d": "100ms" } as React.CSSProperties}
+            />
+          </div>
+          <div className="mt-2">
+            {CASES.map((c, i) => (
+              <CaseRow
+                key={c.id}
+                cf={c}
+                no={String(i + 1).padStart(2, "0")}
+                last={i === CASES.length - 1}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── privacy strip ── */}
       <section className="hairline-t relative px-5 py-12 text-center sm:px-8">
         <div className="mx-auto max-w-2xl">
-          <p className="mono text-[11px] leading-relaxed tracking-[0.2em] text-gold">
+          <p className="mono text-[10.5px] leading-relaxed tracking-[0.2em] text-ink-2">
             ▣ ZERO TELEMETRY &nbsp;·&nbsp; ▣ LOCAL ARCHIVE &nbsp;·&nbsp; ▣
             NOTHING LEAVES THIS DEVICE
           </p>
@@ -285,7 +270,7 @@ export default function Landing() {
             network request is the one that fetched this page.
           </p>
           <p className="label mt-10">
-            TARAONCHAIN · V14 · SINGLE BUILD · {new Date().getFullYear()}
+            TARAONCHAIN · {TUNE.chip} · SINGLE BUILD · {new Date().getFullYear()}
           </p>
         </div>
       </section>

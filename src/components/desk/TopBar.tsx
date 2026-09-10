@@ -2,7 +2,8 @@
 
 import { useStore, reviewedPct } from "@/lib/store";
 
-/* ── top bar — wordmark · case · review % · chapter stepper ── */
+/* ── top bar — v15: wordmark · file id · codename · review
+   rule that draws across the header's base line ── */
 
 export default function TopBar() {
   const home = useStore((s) => s.home);
@@ -18,19 +19,22 @@ export default function TopBar() {
   const total = cf.chapters.length;
 
   return (
-    <header className="panel-deep hairline-b absolute inset-x-0 top-0 z-30 flex h-12 items-center gap-1.5 px-2.5 sm:gap-3 sm:px-4">
+    <header className="hairline-b absolute inset-x-0 top-0 z-30 flex h-12 items-center gap-1.5 bg-[var(--paper)] px-2.5 sm:gap-3 sm:px-4">
       <button
         onClick={home}
-        className="mono shrink-0 text-[10px] font-bold tracking-[0.16em] text-bone transition-colors hover:text-gold-hi sm:text-[11px] sm:tracking-[0.28em]"
+        className="mono shrink-0 text-[10px] font-semibold tracking-[0.16em] text-ink transition-colors hover:text-signal sm:text-[11px] sm:tracking-[0.28em]"
         title="Back to the archive"
       >
-        TARAONCHAIN
+        ← TARAONCHAIN
       </button>
       <span className="hidden text-faint sm:inline">│</span>
       <span className="mono shrink-0 text-[11px] tracking-[0.14em] text-mute">
         {cf.id}
       </span>
-      <span className="mono shrink-0 text-[12px] font-bold tabular-nums text-gold">
+      <span className="disp hidden shrink-0 text-[15px] font-semibold italic text-ink md:inline">
+        {cf.codename.toLowerCase()}
+      </span>
+      <span className="mono shrink-0 text-[12px] font-semibold tabular-nums text-signal">
         {pct}%
       </span>
 
@@ -41,18 +45,18 @@ export default function TopBar() {
         <button
           onClick={prev}
           disabled={chapter === 0}
-          className="flex h-9 w-8 items-center justify-center text-[15px] text-mute transition-colors hover:text-gold-hi disabled:opacity-30"
+          className="flex h-9 w-8 items-center justify-center text-[15px] text-mute transition-colors hover:text-ink disabled:opacity-30"
           aria-label="Previous chapter"
         >
           ‹
         </button>
-        <span className="mono w-[46px] text-center text-[11px] tabular-nums text-bone">
+        <span className="mono w-[46px] text-center text-[11px] tabular-nums text-ink">
           {cf.chapters[chapter].no}/{total.toString().padStart(2, "0")}
         </span>
         <button
           onClick={next}
           disabled={chapter === total - 1}
-          className="flex h-9 w-8 items-center justify-center text-[15px] text-mute transition-colors hover:text-gold-hi disabled:opacity-30"
+          className="flex h-9 w-8 items-center justify-center text-[15px] text-mute transition-colors hover:text-ink disabled:opacity-30"
           aria-label="Next chapter"
         >
           ›
@@ -63,8 +67,8 @@ export default function TopBar() {
         onClick={togglePaused}
         className="flex h-9 w-9 shrink-0 items-center justify-center border text-[11px] transition-colors"
         style={{
-          borderColor: paused ? "rgba(227,185,92,0.5)" : "var(--line)",
-          color: paused ? "var(--gold)" : "var(--mute)",
+          borderColor: paused ? "var(--signal)" : "var(--line-strong)",
+          color: paused ? "var(--signal)" : "var(--ink-3)",
         }}
         aria-label={paused ? "Resume motion" : "Pause motion"}
         title={paused ? "Resume motion" : "Pause motion"}
@@ -79,6 +83,13 @@ export default function TopBar() {
       >
         FILE
       </button>
+
+      {/* the review rule — draws along the header's base */}
+      <span
+        aria-hidden
+        className="absolute bottom-[-1px] left-0 h-[2px] bg-signal transition-all duration-700"
+        style={{ width: `${pct}%` }}
+      />
     </header>
   );
 }

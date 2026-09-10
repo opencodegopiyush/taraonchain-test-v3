@@ -251,16 +251,19 @@ export default function TraceCanvas() {
     canvas.addEventListener("pointercancel", onUp);
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
-    /* ── draw helpers ── */
-    const GOLD = "227, 185, 92";
-    const EMBER = "224, 106, 69";
+    /* ── draw helpers — v15 paper: ink stamps, graphite rules,
+       vermilion signal. "lighter" only works on black; on paper
+       trails multiply (ink absorbing into the page). ── */
+    const INK = "23, 21, 14";
+    const SIGNAL = "212, 73, 31";
+    const EMBER = "122, 30, 18";
 
     const rgba = (rgb: string, a: number) => `rgba(${rgb}, ${a})`;
 
     function drawTrail(pts: TrailPt[], headR: number, rgb: string) {
       if (pts.length < 2) return;
       ctx.save();
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = "multiply";
       ctx.lineCap = "round";
       for (let i = 1; i < pts.length; i++) {
         const k = i / pts.length; // 0 old → 1 new
@@ -277,23 +280,28 @@ export default function TraceCanvas() {
     }
 
     function drawBubble(p: Proj, r: number, color: string, dim: number) {
+      /* printed stamp — flat ink-wash fill, one soft paper
+         highlight upper-left, crisp ring. reads at every size. */
+      ctx.fillStyle = hexA(color, Math.min(1, 0.86 * dim));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, 6.2832);
+      ctx.fill();
       const g = ctx.createRadialGradient(
-        p.x - r * 0.35,
-        p.y - r * 0.4,
-        r * 0.1,
-        p.x,
-        p.y,
-        r,
+        p.x - r * 0.34,
+        p.y - r * 0.42,
+        r * 0.04,
+        p.x - r * 0.34,
+        p.y - r * 0.42,
+        r * 0.95,
       );
-      g.addColorStop(0, rgba("246, 227, 161", Math.min(1, 0.95 * dim)));
-      g.addColorStop(0.45, hexA(color, Math.min(1, 0.85 * dim)));
-      g.addColorStop(1, hexA(color, Math.min(1, 0.28 * dim)));
+      g.addColorStop(0, `rgba(251, 250, 245, ${Math.min(1, 0.5 * dim)})`);
+      g.addColorStop(1, "rgba(251, 250, 245, 0)");
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, 6.2832);
       ctx.fill();
-      ctx.strokeStyle = hexA(color, Math.min(1, 0.9 * dim));
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = hexA(color, Math.min(1, 0.95 * dim));
+      ctx.lineWidth = 1.1;
       ctx.stroke();
     }
 
@@ -357,8 +365,8 @@ export default function TraceCanvas() {
       ctx.fillStyle = SCENE_BG;
       ctx.fillRect(0, 0, w, h);
 
-      /* faint instrument grid */
-      ctx.fillStyle = rgba(GOLD, 0.05);
+      /* faint instrument grid — graphite pin-points */
+      ctx.fillStyle = rgba(INK, 0.07);
       const gs = 46;
       const gx = ((cam.theta * 140) % gs + gs) % gs;
       const gy = ((cam.phi * 140) % gs + gs) % gs;
@@ -398,8 +406,8 @@ export default function TraceCanvas() {
         if (!a || !b) continue;
         const active = anim.edgeSet.has(e.id);
         const touchSel = anim.selSeen === e.source || anim.selSeen === e.target;
-        const alpha = active ? 0.5 : touchSel ? 0.4 : 0.12;
-        ctx.strokeStyle = rgba(GOLD, alpha);
+        const alpha = active ? 0.62 : touchSel ? 0.45 : 0.15;
+        ctx.strokeStyle = active ? rgba(SIGNAL, alpha) : rgba(INK, alpha);
         ctx.lineWidth = active || touchSel ? 1.4 : 1;
         if (active) {
           ctx.setLineDash([2.5, 6.5]);
@@ -417,11 +425,11 @@ export default function TraceCanvas() {
             const f = (t * 0.14 + k * 0.5 + hash01(e.id + k)) % 1;
             const fx = a.x + (b.x - a.x) * f;
             const fy = a.y + (b.y - a.y) * f;
-            ctx.fillStyle = rgba("246, 227, 161", 0.22);
+            ctx.fillStyle = rgba(SIGNAL, 0.2);
             ctx.beginPath();
-            ctx.arc(fx, fy, 4, 0, 6.2832);
+            ctx.arc(fx, fy, 4.5, 0, 6.2832);
             ctx.fill();
-            ctx.fillStyle = rgba("246, 227, 161", 0.85);
+            ctx.fillStyle = rgba(SIGNAL, 0.9);
             ctx.beginPath();
             ctx.arc(fx, fy, 1.7, 0, 6.2832);
             ctx.fill();
@@ -447,7 +455,7 @@ export default function TraceCanvas() {
         const n = nodes.find((m) => m.id === o.id)!;
         const tr = anim.trails.get(o.id);
         if (tr && tr.length > 1) {
-          const rgb = n.kind === "mixer" ? mixerRgb : GOLD;
+          const rgb = n.kind === "mixer" ? mixerRgb : INK;
           drawTrail(tr, o.r, rgb);
         }
       }
@@ -459,20 +467,20 @@ export default function TraceCanvas() {
         const dim = inFocus ? 1 : 0.5;
         const color = NODE_COLORS[n.kind];
 
-        /* under-glow */
-        const gl = ctx.createRadialGradient(o.p.x, o.p.y, o.r * 0.2, o.p.x, o.p.y, o.r * 2.7);
-        gl.addColorStop(0, hexA(color, 0.2 * dim));
+        /* under-tint — a whisper of colour in the paper */
+        const gl = ctx.createRadialGradient(o.p.x, o.p.y, o.r * 0.4, o.p.x, o.p.y, o.r * 2.4);
+        gl.addColorStop(0, hexA(color, 0.13 * dim));
         gl.addColorStop(1, hexA(color, 0));
         ctx.fillStyle = gl;
         ctx.beginPath();
-        ctx.arc(o.p.x, o.p.y, o.r * 2.7, 0, 6.2832);
+        ctx.arc(o.p.x, o.p.y, o.r * 2.4, 0, 6.2832);
         ctx.fill();
 
         drawBubble(o.p, o.r, color, dim);
 
         /* focus halo */
         if (inFocus && anim.focusSet.size > 0) {
-          ctx.strokeStyle = rgba(GOLD, 0.4);
+          ctx.strokeStyle = rgba(SIGNAL, 0.55);
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.arc(o.p.x, o.p.y, o.r + 4.5, 0, 6.2832);
@@ -481,7 +489,7 @@ export default function TraceCanvas() {
 
         /* selection ring + ripple */
         if (anim.selSeen === n.id) {
-          ctx.strokeStyle = rgba("246, 227, 161", 0.95);
+          ctx.strokeStyle = rgba(SIGNAL, 0.95);
           ctx.lineWidth = 1.6;
           ctx.beginPath();
           ctx.arc(o.p.x, o.p.y, o.r + 6.5, 0, 6.2832);
@@ -495,8 +503,8 @@ export default function TraceCanvas() {
       anim.ripples = anim.ripples.filter((rp) => now - rp.t0 < 700);
       for (const rp of anim.ripples) {
         const k = (now - rp.t0) / 700;
-        ctx.strokeStyle = rgba("246, 227, 161", 0.55 * (1 - k));
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = rgba(SIGNAL, 0.6 * (1 - k));
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.arc(rp.x, rp.y, 8 + k * 46, 0, 6.2832);
         ctx.stroke();
@@ -515,23 +523,23 @@ export default function TraceCanvas() {
           (inFocus && (anim.coarse ? o.r > 7 : o.p.scale > 9));
         if (!want) continue;
         const fs = Math.max(9, Math.min(12.5, o.r * 0.62 + 6));
-        ctx.font = `600 ${fs}px "JetBrains Mono", monospace`;
-        const la = anim.selSeen === n.id ? 0.98 : inFocus ? 0.78 : 0.4;
-        ctx.fillStyle = rgba("230, 217, 184", la);
+        ctx.font = `500 ${fs}px "IBM Plex Mono", monospace`;
+        const la = anim.selSeen === n.id ? 0.95 : inFocus ? 0.72 : 0.38;
+        ctx.fillStyle = rgba(INK, la);
         ctx.fillText(n.short, o.p.x, o.p.y + o.r + fs + 4);
       }
 
-      /* vignette */
+      /* paper edge shading — barely-there ink vignette */
       const vg = ctx.createRadialGradient(
         w / 2,
         h / 2,
-        Math.min(w, h) * 0.36,
+        Math.min(w, h) * 0.42,
         w / 2,
         h / 2,
-        Math.max(w, h) * 0.75,
+        Math.max(w, h) * 0.78,
       );
-      vg.addColorStop(0, "rgba(6, 5, 3, 0)");
-      vg.addColorStop(1, "rgba(4, 3, 1, 0.62)");
+      vg.addColorStop(0, "rgba(23, 21, 14, 0)");
+      vg.addColorStop(1, "rgba(23, 21, 14, 0.07)");
       ctx.fillStyle = vg;
       ctx.fillRect(0, 0, w, h);
     };

@@ -5,8 +5,8 @@ import { useStore } from "@/lib/store";
 import { EPI_COLORS, EPI_LABEL } from "@/lib/palette";
 
 /* ── full-screen overlays — the CASE FILE report (findings ·
-   evidence · next steps). v8: the METHOD page is gone — the
-   landing is minimal, one case, one door. esc or ✕. ── */
+   evidence · next steps). v15: a printed dossier on paper —
+   the overlay IS the page, opaque, ruled. esc or ✕. ── */
 
 export default function Overlays() {
   const overlay = useStore((s) => s.overlay);
@@ -31,21 +31,21 @@ export default function Overlays() {
   if (!overlay) return null;
 
   return (
-    <div className="fade-in fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(6,5,3,0.92)" }}>
-      <div className="panel-deep hairline-b flex h-12 shrink-0 items-center justify-between px-4">
-        <span className="mono text-[11px] font-bold tracking-[0.24em] text-gold">
+    <div className="fade-in fixed inset-0 z-50 flex flex-col bg-[var(--paper)]">
+      <div className="hairline-b flex h-12 shrink-0 items-center justify-between bg-[var(--paper)] px-4">
+        <span className="mono text-[11px] font-semibold tracking-[0.24em] text-signal">
           CASE FILE · {cf.id} · {cf.codename}
         </span>
         <button
           onClick={() => setOverlay(null)}
-          className="flex h-9 w-9 items-center justify-center text-[14px] text-mute transition-colors hover:text-gold-hi"
+          className="flex h-9 w-9 items-center justify-center text-[14px] text-mute transition-colors hover:text-ink"
           aria-label="Close overlay"
         >
           ✕
         </button>
       </div>
 
-      <div className="slim-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-8">
+      <div className="slim-scroll flex-1 overflow-y-auto px-5 py-7 sm:px-8">
         <div className="mx-auto w-full max-w-3xl">
           <Report />
         </div>
@@ -57,21 +57,21 @@ export default function Overlays() {
 function Report() {
   const cf = useStore((s) => s.caseFile);
   return (
-    <div className="space-y-9">
+    <div className="space-y-10">
       <section>
         <p className="label mb-3">VERDICT SUMMARY</p>
-        <p className="read">{cf.summary}</p>
+        <p className="read text-[16px]">{cf.summary}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {cf.chains.map((c) => (
             <span key={c} className="chip">{c}</span>
           ))}
           <span className="chip">{cf.span}</span>
           {cf.amountLabel && (
-            <span className="chip" style={{ color: "var(--gold)" }}>
+            <span className="chip border-ink text-ink">
               {cf.amountLabel}
             </span>
           )}
-          <span className="chip" style={{ color: "var(--ember)" }}>
+          <span className="chip" style={{ color: "var(--signal-deep)", borderColor: "var(--signal)" }}>
             {cf.amountUsd}
           </span>
         </div>
@@ -83,15 +83,15 @@ function Report() {
           {cf.findings.map((f, i) => (
             <div
               key={f.id}
-              className="border-l-2 bg-[rgba(12,10,6,0.7)] px-4 py-3.5"
+              className="border-l-2 bg-[var(--paper-2)] px-4 py-3.5"
               style={{ borderColor: EPI_COLORS[f.epistemic] }}
             >
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                <span className="mono text-[10px] font-bold text-faint">
+                <span className="mono text-[10px] font-semibold text-faint">
                   F{String(i + 1).padStart(2, "0")}
                 </span>
                 <span
-                  className="mono text-[9px] font-bold tracking-[0.16em]"
+                  className="mono text-[9px] font-semibold tracking-[0.16em]"
                   style={{ color: EPI_COLORS[f.epistemic] }}
                 >
                   {EPI_LABEL[f.epistemic]}
@@ -100,7 +100,7 @@ function Report() {
                   <span className="label">{f.confidence} CONFIDENCE</span>
                 )}
               </div>
-              <p className="text-[13px] font-bold text-bone">{f.title}</p>
+              <p className="text-[13.5px] font-semibold text-ink">{f.title}</p>
               <p className="read mt-1 text-[14px]">{f.body}</p>
             </div>
           ))}
@@ -114,15 +114,15 @@ function Report() {
             {cf.assetRows.map((r, i) => (
               <div
                 key={i}
-                className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 border bg-[rgba(10,8,5,0.5)] px-3 py-2.5 sm:grid-cols-[1.4fr_1fr_auto]"
+                className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 border bg-[var(--paper-2)] px-3 py-2.5 sm:grid-cols-[1.4fr_1fr_auto]"
               >
-                <span className="mono text-[11.5px] text-bone">{r.loc}</span>
-                <span className="mono text-[11.5px] tabular-nums text-gold-hi">{r.amt}</span>
+                <span className="mono text-[11.5px] text-ink">{r.loc}</span>
+                <span className="mono text-[11.5px] tabular-nums text-ink">{r.amt}</span>
                 <span
                   className="mono text-[9.5px] tracking-[0.14em] sm:justify-self-end"
                   style={{
                     color:
-                      r.tone === "risk" ? "var(--ember)" : r.tone === "assess" ? "var(--gold)" : r.tone === "unknown" ? "var(--smoke)" : "var(--bone)",
+                      r.tone === "risk" ? "var(--signal-deep)" : r.tone === "assess" ? "var(--signal)" : r.tone === "unknown" ? "var(--faint)" : "var(--ink)",
                   }}
                 >
                   {r.state}
@@ -151,13 +151,13 @@ function Report() {
             <tbody>
               {cf.evidence.map((r, i) => (
                 <tr key={`${r.hash}-${i}`} className="hairline-b">
-                  <td className="mono px-2 py-2 text-[10.5px] text-bone">
+                  <td className="mono px-2 py-2 text-[10.5px] text-ink">
                     {r.hash.slice(0, 12)}…{r.hash.slice(-6)}
                   </td>
                   <td className="mono px-2 py-2 text-[10.5px] tabular-nums text-mute">{r.block}</td>
                   <td className="mono whitespace-nowrap px-2 py-2 text-[10.5px] text-mute">{r.ts}</td>
-                  <td className="mono px-2 py-2 text-[10.5px] text-gold">{r.route}</td>
-                  <td className="mono whitespace-nowrap px-2 py-2 text-[10.5px] tabular-nums text-bone">
+                  <td className="mono px-2 py-2 text-[10.5px] text-signal">{r.route}</td>
+                  <td className="mono whitespace-nowrap px-2 py-2 text-[10.5px] tabular-nums text-ink">
                     {r.value}
                   </td>
                 </tr>
@@ -171,8 +171,8 @@ function Report() {
         <p className="label mb-3">NEXT STEPS</p>
         <ol className="space-y-2">
           {cf.nextSteps.map((s, i) => (
-            <li key={i} className="flex gap-3 text-[13px] text-bone">
-              <span className="mono shrink-0 text-gold">{String(i + 1).padStart(2, "0")}</span>
+            <li key={i} className="flex gap-3 text-[13px] text-ink">
+              <span className="mono shrink-0 text-signal">{String(i + 1).padStart(2, "0")}</span>
               <span className="leading-relaxed">{s}</span>
             </li>
           ))}

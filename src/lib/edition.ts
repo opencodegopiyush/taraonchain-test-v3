@@ -1,11 +1,9 @@
-/* ── v10 SINGLE BUILD — one binary, auto-tuned at runtime ────
-   the web/mobile split is gone. there is no NEXT_PUBLIC_EDITION
-   and no per-edition zip anymore: the app detects the device on
-   mount (pointer coarseness + touch + screen) and applies the
-   matching tuning table in place. canvas engines read TUNE
-   every frame, so they pick the change up live. same case file,
-   same report, same colours — every device gets the pacing that
-   suits it. */
+/* ── v15 SINGLE BUILD — one binary, auto-tuned at runtime ───
+   the web/mobile split is gone: the app detects the device on
+   mount and applies the matching tuning table in place. canvas
+   engines read TUNE every frame, so they pick the change up
+   live. same case file, same report, same colours — every
+   device gets the pacing that suits it. */
 
 import { useEffect, useState } from "react";
 
@@ -39,7 +37,7 @@ export type Tune = {
 };
 
 const DESKTOP_TUNE: Tune = {
-  chip: "V14 · AUTO-TUNED",
+  chip: "V15 · CLEAN ROOM",
   /* hero trail */
   heroBubbles: 20,
   heroTrailLen: 15,
@@ -65,7 +63,7 @@ const DESKTOP_TUNE: Tune = {
 };
 
 const MOBILE_TUNE: Tune = {
-  chip: "V14 · AUTO-TUNED",
+  chip: "V15 · CLEAN ROOM",
   heroBubbles: 13,
   heroTrailLen: 11,
   heroTrailAlpha: 0.55, // brighter — small screens need it
@@ -88,7 +86,7 @@ const MOBILE_TUNE: Tune = {
 };
 
 /* live tuning — mutated IN PLACE by retune() so per-frame
-   readers (TraceCanvas, HeroTrail) always see current values.
+   readers (TraceCanvas, HalftoneField) always see current values.
    server + first client render = desktop defaults. */
 export const TUNE: Tune = { ...DESKTOP_TUNE };
 

@@ -13,21 +13,17 @@ import {
 } from "@/lib/palette";
 import type { CaseEdge, CaseNode } from "@/lib/types";
 
-/* ── entity inspector ────────────────────────────────────────
-   mobile: compact bottom card (max 40dvh, no dimmer, no
-   fullscreen takeover — the bubble stays on screen and the
-   camera has already centered it). drag down to dismiss.
-   desktop: right slide-over. */
+/* ── entity inspector — v15 specimen card ────────────────────
+   desktop: a floating card on the plate's left edge — like a
+   specimen label pinned next to the evidence.
+   mobile: compact bottom card (max 40dvh, no dimmer). drag
+   down to dismiss.
 
-type Tab = "overview" | "links" | "txns";
+   ── v8 copy — works on mobile + plain http ──
+   navigator.clipboard only exists in secure contexts. over
+   LAN-IP http it is undefined, so COPY must fall back to
+   execCommand via a throwaway textarea. */
 
-/* ── v8 copy — works on mobile + plain http ──────────────────
-   navigator.clipboard only exists in secure contexts (https or
-   localhost). Over LAN-IP http on a phone it is undefined, so
-   the old code threw and silently gave up — the COPY button
-   "did nothing". Fallback: classic execCommand('copy') via a
-   throwaway textarea, which works on http and most mobile
-   browsers inside the tap gesture. */
 async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -144,49 +140,47 @@ function Card({
 
   return (
     <aside
-      className="t4-spring absolute inset-x-0 bottom-0 z-40 flex max-h-[40dvh] flex-col overflow-hidden rounded-t-[14px] border-t lg:inset-x-auto lg:right-0 lg:top-12 lg:bottom-0 lg:max-h-none lg:w-[378px] lg:rounded-t-none lg:border-t-0 lg:border-l"
+      className="t4-spring absolute inset-x-0 bottom-0 z-40 flex max-h-[40dvh] flex-col overflow-hidden rounded-t-[14px] border-t lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-[76px] lg:w-[352px] lg:max-h-none lg:rounded-t-none lg:border"
       style={{
-        background: "var(--panel-deep)",
+        background: "var(--paper-2)",
         borderColor: "var(--line-strong)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        boxShadow: "0 -12px 44px rgba(3,2,1,0.65)",
+        boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
         transform: dragY !== null ? `translateY(${dragY}px)` : undefined,
         transition: dragY !== null ? "none" : undefined,
       }}
     >
       {/* grab handle + header */}
       <div
-        className="shrink-0 cursor-grab touch-none px-4 pb-2 pt-2 active:cursor-grabbing lg:cursor-default"
+        className="hairline-b shrink-0 cursor-grab touch-none px-4 pb-2 pt-2 active:cursor-grabbing lg:cursor-default"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[rgba(232,193,90,0.3)] lg:hidden" />
-        <div className="flex items-start justify-between gap-3">
+        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[rgba(23,21,14,0.25)] lg:hidden" />
+        <div className="flex items-start justify-between gap-3 pt-1">
           <span
-            className="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+            className="mt-2 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ background: NODE_COLORS[node.kind] }}
           />
-          <h3 className="disp min-w-0 flex-1 text-[19px] font-bold leading-tight text-ink">
+          <h3 className="disp min-w-0 flex-1 text-[20px] font-semibold leading-tight text-ink">
             {node.label}
           </h3>
           <button
             onClick={close}
-            className="flex h-9 w-9 shrink-0 items-center justify-center text-[14px] text-mute transition-colors hover:text-gold-hi"
+            className="flex h-9 w-9 shrink-0 items-center justify-center text-[14px] text-mute transition-colors hover:text-ink"
             aria-label="Close inspector"
           >
             ✕
           </button>
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pb-2.5">
           <span className="chip">{KIND_LABEL[node.kind]}</span>
-          <span className="chip" style={{ color: RISK_COLORS[node.risk] }}>
+          <span className="chip" style={{ color: RISK_COLORS[node.risk], borderColor: RISK_COLORS[node.risk] }}>
             RISK · {RISK_LABEL[node.risk]}
           </span>
           {node.key && (
-            <span className="chip" style={{ color: "var(--gold)" }}>
+            <span className="chip" style={{ color: "var(--signal)", borderColor: "var(--signal)" }}>
               ★ KEY ENTITY
             </span>
           )}
@@ -201,23 +195,20 @@ function Card({
             <button
               key={id}
               onClick={() => setTab(id)}
-              className="mono relative flex min-h-9 items-center gap-1.5 px-3 text-[10px] tracking-[0.16em] transition-colors"
-              style={{ color: active ? "var(--gold-hi)" : "var(--faint)" }}
+              aria-selected={active}
+              className="tab flex items-center gap-1.5"
             >
               {label}
               {count !== null && (
                 <span
                   className="rounded-sm px-1 text-[9px] tabular-nums"
                   style={{
-                    background: active ? "rgba(227,185,92,0.16)" : "rgba(232,193,90,0.07)",
-                    color: active ? "var(--gold)" : "var(--faint)",
+                    background: active ? "rgba(212,73,31,0.12)" : "rgba(23,21,14,0.06)",
+                    color: active ? "var(--signal-deep)" : "var(--faint)",
                   }}
                 >
                   {count}
                 </span>
-              )}
-              {active && (
-                <span className="absolute inset-x-2 bottom-0 h-[2px] bg-[var(--gold)]" />
               )}
             </button>
           );
@@ -229,14 +220,14 @@ function Card({
         {tab === "overview" && (
           <Overview node={node} copy={copy} copied={copied} copyFail={copyFail} />
         )}
-        {tab === "links" && (
-          <Links conns={conns} unit={unit} />
-        )}
+        {tab === "links" && <Links conns={conns} unit={unit} />}
         {tab === "txns" && <Txns txs={txs} unit={unit} copy={copy} copied={copied} copyFail={copyFail} />}
       </div>
     </aside>
   );
 }
+
+type Tab = "overview" | "links" | "txns";
 
 function Overview({
   node,
@@ -253,18 +244,18 @@ function Overview({
   return (
     <div className="space-y-4">
       <button
-        className="mono flex w-full items-center justify-between gap-2 border bg-[rgba(10,8,5,0.5)] px-3 py-2.5 text-left transition-colors hover:border-[rgba(232,193,90,0.4)]"
+        className="mono flex w-full items-center justify-between gap-2 border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         onClick={() => copy(node.address, "addr")}
       >
-        <span className="truncate text-[11px] text-bone">{node.address}</span>
+        <span className="truncate text-[11px] text-ink">{node.address}</span>
         <span
           className="label shrink-0"
           style={{
             color:
               copied === "addr"
-                ? "var(--gold)"
+                ? "var(--signal-deep)"
                 : copyFail === "addr"
-                  ? "var(--ember)"
+                  ? "var(--signal-deep)"
                   : undefined,
           }}
         >
@@ -278,8 +269,8 @@ function Overview({
           ["SENT", node.sent],
           ["BALANCE", node.balance],
         ].map(([l, v]) => (
-          <div key={l as string} className="bg-[rgba(12,10,6,0.9)] px-1.5 py-3 text-center">
-            <p className="mono text-[12px] font-bold tabular-nums text-gold-hi">
+          <div key={l as string} className="bg-[var(--paper)] px-1.5 py-3 text-center">
+            <p className="mono text-[12px] font-semibold tabular-nums text-ink">
               {fmtEth(v as number)}
               <span className="ml-0.5 text-[8px] text-faint">{unit}</span>
             </p>
@@ -296,7 +287,7 @@ function Overview({
       </div>
       <div className="flex items-center justify-between">
         <span className="label">CHAIN</span>
-        <span className="mono text-[10.5px] text-bone">{node.chain}</span>
+        <span className="mono text-[10.5px] text-ink">{node.chain}</span>
       </div>
 
       {node.tags.length > 0 && (
@@ -310,20 +301,20 @@ function Overview({
       )}
 
       {node.note && (
-        <p className="read border-l-2 border-[rgba(232,193,90,0.25)] pl-3 text-[13.5px]">
+        <p className="read border-l-2 border-[rgba(212,73,31,0.4)] pl-3 text-[13.5px]">
           {node.note}
         </p>
       )}
 
       {node.attribution && (
         <div
-          className="border bg-[rgba(227,185,92,0.05)] px-3 py-3"
-          style={{ borderColor: "rgba(227,185,92,0.35)" }}
+          className="border bg-[var(--paper)] px-3 py-3"
+          style={{ borderColor: "rgba(212,73,31,0.4)" }}
         >
-          <p className="label mb-1.5" style={{ color: "var(--gold)" }}>
+          <p className="label mb-1.5" style={{ color: "var(--signal-deep)" }}>
             ATTRIBUTION · {node.attribution.confidence.toUpperCase()} CONFIDENCE
           </p>
-          <p className="text-[12.5px] font-bold text-bone">{node.attribution.claim}</p>
+          <p className="text-[12.5px] font-semibold text-ink">{node.attribution.claim}</p>
           <p className="mt-1 text-[11.5px] leading-relaxed text-mute">
             {node.attribution.basis}
           </p>
@@ -349,16 +340,16 @@ function Links({
         <button
           key={e.id}
           onClick={() => other && selectNode(other.id)}
-          className="flex w-full items-center gap-2.5 border bg-[rgba(10,8,5,0.5)] px-3 py-2.5 text-left transition-colors hover:border-[rgba(232,193,90,0.4)]"
+          className="flex w-full items-center gap-2.5 border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         >
           <span
             className="mono shrink-0 text-[13px]"
-            style={{ color: dir === "out" ? "var(--gold)" : EPI_COLORS[e.epistemic] }}
+            style={{ color: dir === "out" ? "var(--signal)" : EPI_COLORS[e.epistemic] }}
           >
             {dir === "out" ? "→" : "←"}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="mono block truncate text-[12px] text-bone">
+            <span className="mono block truncate text-[12px] text-ink">
               {other?.short}
             </span>
             <span className="label">{KIND_LABEL[other!.kind]} · {EPI_LABEL[e.epistemic]}</span>
@@ -393,10 +384,10 @@ function Txns({
         <button
           key={`${t.hash}-${i}`}
           onClick={() => copy(t.hash, `tx${i}`)}
-          className="block w-full border bg-[rgba(10,8,5,0.5)] px-3 py-2.5 text-left transition-colors hover:border-[rgba(232,193,90,0.4)]"
+          className="block w-full border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="mono truncate text-[11px] text-bone">
+            <span className="mono truncate text-[11px] text-ink">
               {t.hash.slice(0, 10)}…{t.hash.slice(-8)}
             </span>
             <span
@@ -404,9 +395,9 @@ function Txns({
               style={{
                 color:
                   copied === `tx${i}`
-                    ? "var(--gold)"
+                    ? "var(--signal-deep)"
                     : copyFail === `tx${i}`
-                      ? "var(--ember)"
+                      ? "var(--signal-deep)"
                       : undefined,
               }}
             >
@@ -414,7 +405,7 @@ function Txns({
             </span>
           </div>
           <div className="mt-1 flex items-center justify-between">
-            <span className="mono text-[10.5px] text-gold">
+            <span className="mono text-[10.5px] text-signal">
               {fmtEth(t.value)} {unit} → {t.via}
             </span>
             <span className="label">{t.ts}</span>

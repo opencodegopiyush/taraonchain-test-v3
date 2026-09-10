@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 
-/* ── chapter rail — horizontal chips (mobile strip) ────────── */
+/* ── chapter strip — mobile only. printed page numbers:
+   the active chapter underlines in signal. ── */
 
 export default function ChapterRail() {
   const cf = useStore((s) => s.caseFile);
@@ -19,8 +20,8 @@ export default function ChapterRail() {
   return (
     <div
       ref={box}
-      className="no-scrollbar absolute inset-x-0 top-12 z-20 flex gap-1.5 overflow-x-auto px-3 py-2 lg:hidden"
-      style={{ background: "linear-gradient(180deg, rgba(8,7,4,0.92), rgba(8,7,4,0.65))" }}
+      className="no-scrollbar absolute inset-x-0 top-12 z-20 flex gap-1 overflow-x-auto px-3 py-2 lg:hidden"
+      style={{ background: "var(--paper)" }}
     >
       {cf.chapters.map((c, i) => {
         const active = i === chapter;
@@ -28,18 +29,20 @@ export default function ChapterRail() {
           <button
             key={c.id}
             onClick={() => setChapter(i)}
-            className="mono flex h-8 shrink-0 items-center gap-1.5 border px-2.5 text-[10px] tracking-[0.14em] transition-all"
+            className="mono relative flex h-8 shrink-0 items-center gap-1.5 px-2.5 text-[10px] tracking-[0.14em] transition-colors"
             style={{
-              borderColor: active ? "rgba(227,185,92,0.55)" : "var(--line)",
-              background: active ? "rgba(227,185,92,0.1)" : "rgba(10,8,5,0.5)",
-              color: active ? "var(--gold-hi)" : "var(--faint)",
+              color: active ? "var(--ink)" : "var(--ink-3)",
+              background: active ? "var(--paper-deep)" : "transparent",
             }}
             aria-label={`Chapter ${c.no}: ${c.title}`}
           >
-            <span style={{ color: active ? "var(--gold)" : "var(--faint)" }}>
+            <span className="font-semibold" style={{ color: active ? "var(--signal)" : undefined }}>
               {c.no}
             </span>
-            <span className="max-w-[110px] truncate">{c.title}</span>
+            <span className="max-w-[110px] truncate">{active ? c.title : ""}</span>
+            {active && (
+              <span className="absolute inset-x-2 bottom-0 h-[2px] bg-signal" />
+            )}
           </button>
         );
       })}
