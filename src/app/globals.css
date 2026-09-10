@@ -1,37 +1,41 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   TARAONCHAIN — v15 "PAPER TRAIL"
-   the black-gold terminal is retired. v15 is a daylight
-   forensic studio: warm paper, ink, one signal vermilion.
-   observed = ink (printed fact) · assessed = signal (vermilion)
-   unknown = graphite · risk = signal-deep
-   fonts: fraunces (display + reading) · ibm plex mono (chrome/data)
-   motion: plotter rules draw once, content wipes in behind them,
-   everything else holds still. no glow, no scanlines, no noise.
+   TARAONCHAIN — v16 "STILL"
+   the archive becomes a Swiss dossier: cool paper, one
+   electric blue, flat print shapes. Space Grotesk carries
+   display + reading; IBM Plex Mono carries data.
+
+   MOTION BUDGET — the v16 law:
+   · the trace plate renders ONLY when something actually
+     moves (drag / zoom / chapter ease / selection). settled
+     graph = zero draws, zero GPU.
+   · the landing carries no canvas at all.
+   · UI motion is ≤220ms CSS transitions. nothing loops.
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  --paper: #f4f1e8;
-  --paper-2: #fbfaf5;
-  --paper-deep: #ece8db;
-  --ink: #17150e;
-  --ink-2: #4a4739;
-  --ink-3: #8a8570;
-  --faint: #a09b86;
-  --signal: #d4491f;
-  --signal-deep: #a63715;
-  --moss: #3d6b4f;
-  --smoke: #8a8570;
-  --line: rgba(23, 21, 14, 0.13);
-  --line-strong: rgba(23, 21, 14, 0.32);
+  --paper: #f5f5f2;
+  --paper-2: #fcfcfa;
+  --paper-deep: #ebebe7;
+  --ink: #111113;
+  --ink-2: #45454a;
+  --ink-3: #7d7d84;
+  --faint: #a6a6ad;
+  --signal: #2440f5;
+  --signal-deep: #1a2fc4;
+  --signal-soft: rgba(36, 64, 245, 0.08);
+  --moss: #0f766e;
+  --smoke: #7d7d84;
+  --line: rgba(17, 17, 19, 0.12);
+  --line-strong: rgba(17, 17, 19, 0.3);
   --shadow-sheet:
-    0 1px 2px rgba(23, 21, 14, 0.05),
-    0 12px 40px rgba(23, 21, 14, 0.09);
+    0 1px 2px rgba(17, 17, 19, 0.04),
+    0 10px 34px rgba(17, 17, 19, 0.07);
 
-  --font-disp: "Fraunces Variable", "Source Serif 4 Variable", Georgia, serif;
+  --font-disp: "Space Grotesk Variable", "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-ui: "IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
-  --font-read: "Fraunces Variable", "Source Serif 4 Variable", Georgia, serif;
+  --font-read: "Space Grotesk Variable", "Space Grotesk", "Inter", system-ui, sans-serif;
 }
 
 @theme inline {
@@ -74,16 +78,16 @@
   body {
     background: var(--paper);
     color: var(--ink);
-    font-family: var(--font-ui);
+    font-family: var(--font-read);
     font-size: 13px;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
     overscroll-behavior: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
 
   ::selection {
-    background: rgba(212, 73, 31, 0.16);
+    background: rgba(36, 64, 245, 0.14);
     color: var(--signal-deep);
   }
 }
@@ -98,14 +102,12 @@
   }
   .disp {
     font-family: var(--font-disp);
-    font-variation-settings: "opsz" 72;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.03em;
   }
   .read {
     font-family: var(--font-read);
-    font-variation-settings: "opsz" 14;
-    font-size: 15.5px;
-    line-height: 1.74;
+    font-size: 15px;
+    line-height: 1.72;
     color: var(--ink-2);
   }
 
@@ -117,7 +119,7 @@
     color: var(--ink-3);
   }
 
-  /* ── surfaces — paper sheets, never glass ─────────────────── */
+  /* ── surfaces — flat sheets, never glass, never shadow soup ── */
 
   .panel {
     background: var(--paper-2);
@@ -162,27 +164,22 @@
     min-height: 44px;
     padding: 0 20px;
     transition:
-      transform 0.16s ease,
-      background 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease;
+      background 0.16s ease,
+      border-color 0.16s ease,
+      color 0.16s ease;
     user-select: none;
     cursor: pointer;
   }
-  .btn:active {
-    transform: scale(0.97);
-  }
 
-  /* the one filled button — signal ink on paper */
   .btn-gold {
-    background: var(--signal);
+    background: var(--ink);
     color: var(--paper-2);
-    border: 1px solid var(--signal);
+    border: 1px solid var(--ink);
     font-weight: 600;
   }
   .btn-gold:hover {
-    background: var(--signal-deep);
-    border-color: var(--signal-deep);
+    background: var(--signal);
+    border-color: var(--signal);
   }
   .btn-gold:disabled {
     background: var(--paper-deep);
@@ -230,7 +227,6 @@
     display: inline-block;
   }
 
-  /* status tag — outlined print tag (CLOSED in moss, latest filled) */
   .tag {
     font-family: var(--font-ui);
     font-size: 9px;
@@ -241,27 +237,27 @@
     align-items: center;
     gap: 6px;
     padding: 4px 8px;
-    border: 1px solid var(--moss);
-    color: var(--moss);
+    border: 1px solid var(--ink-3);
+    color: var(--ink-3);
   }
   .tag-fill {
     background: var(--signal);
     border-color: var(--signal);
-    color: var(--paper-2);
+    color: #fff;
   }
 
-  /* ── scrollbars — graphite on paper ───────────────────────── */
+  /* ── scrollbars ───────────────────────────────────────────── */
 
   .slim-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgba(23, 21, 14, 0.24) transparent;
+    scrollbar-color: rgba(17, 17, 19, 0.24) transparent;
   }
   .slim-scroll::-webkit-scrollbar {
     width: 5px;
     height: 5px;
   }
   .slim-scroll::-webkit-scrollbar-thumb {
-    background: rgba(23, 21, 14, 0.24);
+    background: rgba(17, 17, 19, 0.24);
     border-radius: 4px;
   }
   .slim-scroll::-webkit-scrollbar-track {
@@ -276,47 +272,21 @@
 
   .t4-spring {
     transition:
-      transform 0.42s cubic-bezier(0.32, 0.72, 0.24, 1.08),
-      opacity 0.26s ease;
+      transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.2s ease;
   }
 
-  /* ── v15 motion — the plotter language ─────────────────────
-     1. .rule — a hairline that DRAWS left→right once (scaleX)
-     2. .wipe — content revealed by a clip-path wipe behind the
-        rule; never covered, never dependent on JS to be visible
-     3. .rise — 10px rise + fade, for small chrome
-     failure mode of every piece: content simply shows. */
-
-  .rule {
-    height: 1px;
-    background: var(--ink);
-    transform: scaleX(0);
-    transform-origin: left center;
-    transition: transform 0.9s cubic-bezier(0.65, 0, 0.2, 1) both;
-    transition-delay: var(--d, 0ms);
-  }
-  .rule.on {
-    transform: scaleX(1);
-  }
-  .rule-signal {
-    background: var(--signal);
-  }
-
-  .wipe {
-    clip-path: inset(0 100% 0 0);
-    transition: clip-path 0.8s cubic-bezier(0.65, 0, 0.2, 1) both;
-    transition-delay: var(--d, 0ms);
-  }
-  .wipe.on {
-    clip-path: inset(0 0 0 0);
-  }
+  /* ── v16 motion — the quiet language ────────────────────────
+     one entrance (rise 8px / 0.45s, staggered by --d) and one
+     reveal (fade 0.3s on scroll into view). nothing loops,
+     nothing tracks the pointer, nothing runs after landing. */
 
   .rise {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
     transition:
-      opacity 0.5s ease both,
-      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      opacity 0.45s ease both,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
     transition-delay: var(--d, 0ms);
   }
   .rise.on {
@@ -324,41 +294,27 @@
     transform: translateY(0);
   }
 
-  /* static arrive (no observer) for above-the-fold chrome */
   .arrive {
-    animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: var(--d, 0ms);
   }
 
-  /* the plotter pass — a 1px signal line sweeps the viewport
-     ONCE on open, like a pen taking the page's measure */
-  .plotter {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 1.5px;
-    z-index: 6;
-    background: var(--signal);
-    opacity: 0;
-    pointer-events: none;
-    animation: plotter-pass 1.15s cubic-bezier(0.5, 0, 0.15, 1) 0.15s both;
+  .fade-in {
+    animation: fade-in 0.3s ease both;
   }
 
-  /* index row marker — the signal tick that slides in on hover */
-  .row-tick {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--signal);
-    transform: scaleY(0);
-    transform-origin: center;
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  /* index row hover — background flips to ink, text to paper.
+     pure CSS, one paint, 150ms. */
+  .row-flip {
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .row-flip:hover,
+  .row-flip:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
   }
 
-  /* thin measured progress line (declassified %) */
+  /* thin measured progress line (reviewed %) */
   .meter {
     height: 2px;
     background: var(--paper-deep);
@@ -367,11 +323,11 @@
   .meter > span {
     display: block;
     height: 100%;
-    background: var(--ink);
-    transition: width 1s cubic-bezier(0.65, 0, 0.2, 1);
+    background: var(--signal);
+    transition: width 0.6s cubic-bezier(0.65, 0, 0.2, 1);
   }
 
-  /* underlined tab — ink text, signal underline slides */
+  /* underlined tab — ink text, blue underline slides */
   .tab {
     font-family: var(--font-ui);
     font-size: 10px;
@@ -380,7 +336,7 @@
     position: relative;
     padding: 10px 2px;
     color: var(--ink-3);
-    transition: color 0.2s ease;
+    transition: color 0.16s ease;
   }
   .tab[aria-selected="true"],
   .tab.on {
@@ -395,48 +351,24 @@
     height: 2px;
     background: var(--signal);
     transform: scaleX(0);
-    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .tab[aria-selected="true"]::after,
   .tab.on::after {
     transform: scaleX(1);
   }
-
-  @media (pointer: coarse) {
-    /* touch: no hover-dependent content, reveal durations short */
-    .wipe {
-      transition-duration: 0.55s;
-    }
-  }
 }
 
-/* ── motion (keyframes live outside layers) ────────────────── */
+/* ── keyframes (outside layers) ─────────────────────────────── */
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes plotter-pass {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  82% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100svh);
-    opacity: 0;
   }
 }
 
@@ -449,55 +381,14 @@
   }
 }
 
-@keyframes blink-caret {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
-@layer components {
-  .fade-in {
-    animation: fade-in 0.45s ease both;
-  }
-  .pulse-dot {
-    animation: pulse-dot 1.9s ease-in-out infinite;
-  }
-  .caret::after {
-    content: "_";
-    margin-left: 2px;
-    color: var(--signal);
-    animation: blink-caret 1.05s step-end infinite;
-  }
-}
-
 /* ── reduced motion — everything simply shows ──────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .rule,
-  .wipe,
   .rise,
   .arrive,
-  .plotter,
-  .fade-in,
-  .pulse-dot {
+  .fade-in {
     animation: none !important;
     transition: none !important;
-    clip-path: none !important;
     opacity: 1 !important;
     transform: none !important;
   }

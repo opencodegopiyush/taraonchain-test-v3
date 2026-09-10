@@ -140,7 +140,7 @@ function Card({
 
   return (
     <aside
-      className="t4-spring absolute inset-x-0 bottom-0 z-40 flex max-h-[40dvh] flex-col overflow-hidden rounded-t-[14px] border-t lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-[76px] lg:w-[352px] lg:max-h-none lg:rounded-t-none lg:border"
+      className="t4-spring absolute inset-x-0 bottom-0 z-40 flex max-h-[38svh] flex-col overflow-hidden rounded-t-[14px] border-t lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-5 lg:w-[340px] lg:max-h-[calc(100%-40px)] lg:rounded-t-none lg:border"
       style={{
         background: "var(--paper-2)",
         borderColor: "var(--line-strong)",
@@ -157,7 +157,7 @@ function Card({
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[rgba(23,21,14,0.25)] lg:hidden" />
+        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-[rgba(17,17,19,0.25)] lg:hidden" />
         <div className="flex items-start justify-between gap-3 pt-1">
           <span
             className="mt-2 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -203,7 +203,7 @@ function Card({
                 <span
                   className="rounded-sm px-1 text-[9px] tabular-nums"
                   style={{
-                    background: active ? "rgba(212,73,31,0.12)" : "rgba(23,21,14,0.06)",
+                    background: active ? "rgba(36,64,245,0.1)" : "rgba(17,17,19,0.06)",
                     color: active ? "var(--signal-deep)" : "var(--faint)",
                   }}
                 >
@@ -301,7 +301,7 @@ function Overview({
       )}
 
       {node.note && (
-        <p className="read border-l-2 border-[rgba(212,73,31,0.4)] pl-3 text-[13.5px]">
+        <p className="read border-l-2 border-[rgba(36,64,245,0.45)] pl-3 text-[13.5px]">
           {node.note}
         </p>
       )}
@@ -309,7 +309,7 @@ function Overview({
       {node.attribution && (
         <div
           className="border bg-[var(--paper)] px-3 py-3"
-          style={{ borderColor: "rgba(212,73,31,0.4)" }}
+          style={{ borderColor: "rgba(36,64,245,0.45)" }}
         >
           <p className="label mb-1.5" style={{ color: "var(--signal-deep)" }}>
             ATTRIBUTION · {node.attribution.confidence.toUpperCase()} CONFIDENCE

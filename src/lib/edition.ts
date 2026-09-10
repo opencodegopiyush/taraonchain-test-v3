@@ -1,9 +1,9 @@
-/* ── v15 SINGLE BUILD — one binary, auto-tuned at runtime ───
-   the web/mobile split is gone: the app detects the device on
-   mount and applies the matching tuning table in place. canvas
-   engines read TUNE every frame, so they pick the change up
-   live. same case file, same report, same colours — every
-   device gets the pacing that suits it. */
+/* ── v16 "STILL" SINGLE BUILD — one binary, auto-tuned ──────
+   v16's law: the graph moves only when YOU move it. the
+   tuning tables keep their shape (the engine still reads
+   them) but every idle-animation knob is pinned to zero:
+   no drift, no orbit, no comet trails. rendering is
+   on-demand — a settled graph costs literally nothing. */
 
 import { useEffect, useState } from "react";
 
@@ -37,56 +37,56 @@ export type Tune = {
 };
 
 const DESKTOP_TUNE: Tune = {
-  chip: "V15 · CLEAN ROOM",
-  /* hero trail */
-  heroBubbles: 20,
-  heroTrailLen: 15,
-  heroTrailAlpha: 0.38,
-  heroConstellation: 132,
-  heroPushRadius: 150,
-  heroPushForce: 0.7,
-  /* desk comet trails */
-  deskTrailLen: 19,
-  deskTrailAlpha: 0.52, // clearly visible on big screens
-  deskTrailWidth: 0.72,
-  /* desk idle motion */
-  idleDelay: 3500, // ms before the scene starts breathing
-  orbitSpeed: 0.016, // rad/s idle orbit — clearly alive
-  driftAmp: 1.55, // organic bubble wander multiplier
-  driftSpeed: 1.3,
+  chip: "V16 · STILL",
+  /* hero trail — retired, landing carries no canvas */
+  heroBubbles: 0,
+  heroTrailLen: 0,
+  heroTrailAlpha: 0,
+  heroConstellation: 0,
+  heroPushRadius: 0,
+  heroPushForce: 0,
+  /* desk comet trails — retired by the motion budget */
+  deskTrailLen: 0,
+  deskTrailAlpha: 0,
+  deskTrailWidth: 0,
+  /* desk idle motion — pinned: the figure holds still */
+  idleDelay: 2147483647, // never
+  orbitSpeed: 0,
+  driftAmp: 0,
+  driftSpeed: 0,
   speed: 1.0,
   hoverFx: true,
-  /* evidence cloud */
-  cloudParticles: 2400,
-  cloudPushRadius: 150,
-  cloudPushForce: 0.55,
+  /* evidence cloud — retired */
+  cloudParticles: 0,
+  cloudPushRadius: 0,
+  cloudPushForce: 0,
 };
 
 const MOBILE_TUNE: Tune = {
-  chip: "V15 · CLEAN ROOM",
-  heroBubbles: 13,
-  heroTrailLen: 11,
-  heroTrailAlpha: 0.55, // brighter — small screens need it
-  heroConstellation: 118,
-  heroPushRadius: 140,
-  heroPushForce: 0.85, // finger scatter feels stronger
-  deskTrailLen: 13,
-  deskTrailAlpha: 0.46, // full brightness — never faint on a phone
-  deskTrailWidth: 0.66,
-  idleDelay: 12000, // phones keep the calm v6 feel
-  orbitSpeed: 0.006,
-  driftAmp: 1.0,
-  driftSpeed: 1.0,
-  speed: 0.85, // faster-feeling reveals on small screens
+  chip: "V16 · STILL",
+  heroBubbles: 0,
+  heroTrailLen: 0,
+  heroTrailAlpha: 0,
+  heroConstellation: 0,
+  heroPushRadius: 0,
+  heroPushForce: 0,
+  deskTrailLen: 0,
+  deskTrailAlpha: 0,
+  deskTrailWidth: 0,
+  idleDelay: 2147483647, // never
+  orbitSpeed: 0,
+  driftAmp: 0,
+  driftSpeed: 0,
+  speed: 1.0,
   hoverFx: false,
-  /* evidence cloud */
-  cloudParticles: 1400,
-  cloudPushRadius: 140,
-  cloudPushForce: 0.85, // finger scatter feels stronger
+  /* evidence cloud — retired */
+  cloudParticles: 0,
+  cloudPushRadius: 0,
+  cloudPushForce: 0,
 };
 
 /* live tuning — mutated IN PLACE by retune() so per-frame
-   readers (TraceCanvas, HalftoneField) always see current values.
+   readers (TraceCanvas) always see current values.
    server + first client render = desktop defaults. */
 export const TUNE: Tune = { ...DESKTOP_TUNE };
 
