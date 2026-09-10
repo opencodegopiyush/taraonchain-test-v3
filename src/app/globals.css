@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   TARAONCHAIN — v16 "STILL"
-   the archive becomes a Swiss dossier: cool paper, one
-   electric blue, flat print shapes. Space Grotesk carries
-   display + reading; IBM Plex Mono carries data.
+   TARAONCHAIN — v17 "THE DRAWER"
+   cool paper, one electric blue, flat print shapes. the
+   landing is a drawer of full-height case doors — the first
+   screen IS the archive. Space Grotesk carries display +
+   reading; IBM Plex Mono carries data.
 
    MOTION BUDGET — the v16 law:
    · the trace plate renders ONLY when something actually
@@ -303,15 +304,31 @@
     animation: fade-in 0.3s ease both;
   }
 
-  /* index row hover — background flips to ink, text to paper.
-     pure CSS, one paint, 150ms. */
-  .row-flip {
-    transition: background 0.15s ease, color 0.15s ease;
+  /* v17 door — the whole case door floods signal blue under
+     the pointer. pure CSS, one paint, 160ms. */
+  .door-flip {
+    transition: background 0.16s ease, color 0.16s ease;
   }
-  .row-flip:hover,
-  .row-flip:focus-visible {
-    background: var(--ink);
-    color: var(--paper);
+  .door-flip:hover,
+  .door-flip:focus-visible {
+    background: var(--signal);
+  }
+  .door-flip:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: -2px;
+  }
+
+  /* watermark numeral on a door — hollow print stroke */
+  .stroke-num {
+    font-family: var(--font-disp);
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(17, 17, 19, 0.16);
+    transition: -webkit-text-stroke-color 0.16s ease;
+  }
+  .door-flip:hover .stroke-num,
+  .door-flip:focus-visible .stroke-num {
+    -webkit-text-stroke-color: rgba(245, 245, 242, 0.35);
   }
 
   /* thin measured progress line (reviewed %) */

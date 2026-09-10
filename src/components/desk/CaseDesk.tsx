@@ -7,13 +7,14 @@ import TopBar from "./TopBar";
 import ChapterReader from "./ChapterReader";
 import Inspector from "./Inspector";
 
-/* ── case desk — v16 "STILL" reader layout ───────────────────
-   the case is a document now. the trace plate is a STICKY
+/* ── case desk — v17 reader layout ───────────────────────
+   the case is a document: the trace plate is a STICKY
    figure on the left (desktop) / top (mobile); the chapters
    scroll past it like pages. scrolling IS navigation — the
    scrollspy in ChapterReader retargets the authored chapter
-   cameras as you read. no app-shell, no internal scroll
-   regions, no bottom sheet. */
+   cameras as you read. v17 mobile: legend chrome comes off
+   the small plate (decluttered) and the inspector becomes a
+   full bottom sheet — see Inspector.tsx. */
 
 export default function CaseDesk() {
   const cf = useStore((s) => s.caseFile);
@@ -33,15 +34,18 @@ export default function CaseDesk() {
           <div className="relative h-[44svh] w-full lg:h-full">
             <TraceCanvas />
 
-            {/* fig caption — top left */}
+            {/* fig caption — top left, with the mobile touch hint */}
             <div className="pointer-events-none absolute left-3 top-3 z-10">
               <p className="mono bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3">
                 FIG. {cf.id} · TRACE PLATE
               </p>
+              <p className="mono mt-1 bg-[var(--paper)] px-2 py-1 text-[9px] tracking-[0.22em] text-ink-3 lg:hidden">
+                TAP A NODE · PINCH TO ZOOM
+              </p>
             </div>
 
-            {/* legend + recenter — bottom left */}
-            <div className="absolute bottom-12 left-3 z-10 flex flex-col items-start gap-2 lg:bottom-5 lg:left-5">
+            {/* legend — desktop only; it crowds the small mobile plate */}
+            <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-5 lg:left-5 lg:flex">
               <div className="flex flex-col gap-1 bg-[var(--paper)] px-2.5 py-2">
                 <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
                   <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#111113" }} />

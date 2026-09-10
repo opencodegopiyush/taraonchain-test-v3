@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import {
   EPI_COLORS,
@@ -13,11 +13,13 @@ import {
 } from "@/lib/palette";
 import type { CaseEdge, CaseNode } from "@/lib/types";
 
-/* ── entity inspector — v15 specimen card ────────────────────
+/* ── entity inspector — v17 ─────────────────────────────
    desktop: a floating card on the plate's left edge — like a
-   specimen label pinned next to the evidence.
-   mobile: compact bottom card (max 40dvh, no dimmer). drag
-   down to dismiss.
+   specimen label pinned next to the evidence (unchanged).
+   mobile: a FULL bottom sheet — 86dvh, scrimmed, body scroll
+   locked while open. v16's 38svh card clipped the record in
+   half; the sheet shows the whole file with room to scroll.
+   drag down to dismiss, ✕ or scrim tap also close.
 
    ── v8 copy — works on mobile + plain http ──
    navigator.clipboard only exists in secure contexts. over
@@ -77,6 +79,18 @@ function Card({
   const [copied, setCopied] = useState<string | null>(null);
   const startY = useRef(0);
   const dragging = useRef(false);
+
+  /* mobile sheet: lock the page behind it while it's open —
+     the record reads like its own page, not a card fighting
+     the scroll underneath. desktop never locks. */
+  useEffect(() => {
+    if (window.innerWidth >= 1024) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const conns = useMemo(
     () =>
@@ -139,16 +153,25 @@ function Card({
   ];
 
   return (
-    <aside
-      className="t4-spring absolute inset-x-0 bottom-0 z-40 flex max-h-[38svh] flex-col overflow-hidden rounded-t-[14px] border-t lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-5 lg:w-[340px] lg:max-h-[calc(100%-40px)] lg:rounded-t-none lg:border"
-      style={{
-        background: "var(--paper-2)",
-        borderColor: "var(--line-strong)",
-        boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
-        transform: dragY !== null ? `translateY(${dragY}px)` : undefined,
-        transition: dragY !== null ? "none" : undefined,
-      }}
-    >
+    <>
+      {/* mobile scrim — tap to dismiss (desktop: none, the card
+          floats beside the evidence) */}
+      <button
+        aria-label="Close inspector"
+        onClick={close}
+        className="fade-in fixed inset-0 z-40 cursor-default bg-[rgba(17,17,19,0.32)] lg:hidden"
+      />
+
+      <aside
+        className="t4-spring fixed inset-x-0 bottom-0 z-50 flex h-[min(86dvh,760px)] flex-col overflow-hidden rounded-t-[16px] border-t lg:absolute lg:inset-x-auto lg:bottom-5 lg:left-5 lg:top-5 lg:z-40 lg:h-auto lg:w-[340px] lg:max-h-[calc(100%-40px)] lg:rounded-t-none lg:border"
+        style={{
+          background: "var(--paper-2)",
+          borderColor: "var(--line-strong)",
+          boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
+          transform: dragY !== null ? `translateY(${dragY}px)` : undefined,
+          transition: dragY !== null ? "none" : undefined,
+        }}
+      >
       {/* grab handle + header */}
       <div
         className="hairline-b shrink-0 cursor-grab touch-none px-4 pb-2 pt-2 active:cursor-grabbing lg:cursor-default"
@@ -216,7 +239,7 @@ function Card({
       </div>
 
       {/* body */}
-      <div className="slim-scroll flex-1 overflow-y-auto px-4 py-4">
+      <div className="slim-scroll flex-1 overflow-y-auto px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 lg:pb-4">
         {tab === "overview" && (
           <Overview node={node} copy={copy} copied={copied} copyFail={copyFail} />
         )}
@@ -224,6 +247,7 @@ function Card({
         {tab === "txns" && <Txns txs={txs} unit={unit} copy={copy} copied={copied} copyFail={copyFail} />}
       </div>
     </aside>
+    </>
   );
 }
 

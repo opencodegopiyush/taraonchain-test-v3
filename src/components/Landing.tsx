@@ -5,109 +5,134 @@ import { CASES } from "@/lib/case-data";
 import type { CaseFile } from "@/lib/types";
 import { TUNE } from "@/lib/edition";
 
-/* ── v16 landing — THE POSTER ────────────────────────────────
-   no canvas, no particles, no observers, no count-ups. the
-   archive opens as pure typography on cool paper: a giant
-   Swiss headline, ruled meta columns, and each case as one
-   full-width index row that flips to ink under the pointer.
-   the only motion is two CSS entrances. everything is on the
-   page before you move. */
+/* ── v17 landing — THE DRAWER ────────────────────────────────
+   every landing before this one was a page you SCROLLED: a
+   hero block, then a vertical list of files. v17 has no hero
+   and no list. the archive opens as a drawer of full-height
+   case DOORS — the first screen IS the archive. two files
+   side by side on desktop (pull the folder you want), stacked
+   full-height on mobile. zero canvas, zero particles, zero
+   observers, zero count-ups. the only motion is staggered
+   CSS entrances and one 160ms hover flood. */
 
-/* per-case row chrome — tag + drawdown are report facts */
-const ROW_META: Record<string, { tag: string; fill?: boolean; drawdown: string }> = {
+/* per-case door chrome — tag + drawdown are report facts */
+const DOOR_META: Record<string, { tag: string; fill?: boolean; drawdown: string }> = {
   "R-0905": { tag: "LATEST", fill: true, drawdown: "−99.3% FROM PEAK" },
   "S-0830": { tag: "ARCHIVED", drawdown: "−98.8% FROM PEAK" },
 };
 
-/* ── the index row — the WHOLE ROW is the button (v9 rule) ── */
-function CaseRow({
-  cf,
-  no,
-  last,
-}: {
-  cf: CaseFile;
-  no: string;
-  last?: boolean;
-}) {
+/* ── one door = one case file. the WHOLE DOOR is the button. ── */
+function Door({ cf, no, total }: { cf: CaseFile; no: number; total: number }) {
   const openCase = useStore((s) => s.openCase);
   const visited = useStore((s) => s.visited);
   const pct = reviewedPct({ visited, caseFile: cf });
-  const meta = ROW_META[cf.id] ?? { tag: "DECLASSIFIED", drawdown: "" };
+  const meta = DOOR_META[cf.id] ?? { tag: "DECLASSIFIED", drawdown: "" };
 
   return (
     <button
       onClick={() => openCase(cf.id)}
       aria-label={`Open case file ${cf.id} — ${cf.codename}`}
-      className={`row-flip group relative block w-full cursor-pointer border-t border-[var(--line-strong)] text-left ${
-        last ? "border-b border-b-[var(--line-strong)]" : ""
+      className={`door-flip group relative flex min-h-[92svh] w-full shrink-0 flex-col justify-between overflow-hidden p-6 text-left sm:p-10 md:min-h-0 md:w-auto md:flex-1 md:p-8 lg:p-12 ${
+        no < total ? "border-b border-[var(--line-strong)] md:border-b-0 md:border-r" : ""
       }`}
     >
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 px-2 py-10 sm:px-4 lg:grid-cols-[72px_1fr_300px] lg:py-14">
-        {/* index numeral */}
-        <span className="mono text-[13px] font-semibold tracking-[0.2em] text-signal">
-          {no}
+      {/* watermark numeral — hollow print stroke */}
+      <span
+        aria-hidden
+        className="stroke-num pointer-events-none absolute -bottom-[3vw] right-2 select-none font-bold leading-none md:-bottom-[1.5vw] md:right-6"
+        style={{ fontSize: "clamp(140px, 24vw, 340px)" }}
+      >
+        {String(no).padStart(2, "0")}
+      </span>
+
+      {/* top — file index + status */}
+      <div
+        className="arrive relative flex items-center justify-between gap-3"
+        style={{ "--d": "80ms" } as React.CSSProperties}
+      >
+        <span className="mono text-[11px] font-semibold tracking-[0.22em] text-signal group-hover:text-[var(--paper)]">
+          FILE {String(no).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </span>
+        <span
+          className={
+            meta.fill
+              ? "tag tag-fill"
+              : "tag group-hover:border-[var(--paper)] group-hover:text-[var(--paper)]"
+          }
+        >
+          {meta.tag}
+        </span>
+      </div>
 
-        {/* identity */}
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="label group-hover:text-[var(--paper)]">{cf.id}</span>
-            <span className={meta.fill ? "tag tag-fill" : "tag group-hover:border-[var(--paper)] group-hover:text-[var(--paper)]"}>
-              {meta.tag}
-            </span>
-            <span className="label hidden sm:inline group-hover:text-[var(--paper)]">{cf.status}</span>
-          </div>
-          <h2 className="disp mt-3 text-[13vw] font-bold uppercase leading-[0.92] text-ink sm:text-[64px] lg:text-[76px]">
-            {cf.codename}
-          </h2>
-          <p className="mono mt-3 text-[10.5px] tracking-[0.16em] text-mute group-hover:text-[var(--paper)]">
-            {cf.chains.join(" / ").toUpperCase()} · {cf.span.toUpperCase()}
-          </p>
-          <p className="read mt-4 max-w-xl text-[14px] group-hover:text-[var(--paper)]">{cf.summary}</p>
-        </div>
+      {/* middle — the name */}
+      <div className="relative py-12 md:py-8">
+        <p
+          className="label arrive group-hover:text-[var(--paper)]"
+          style={{ "--d": "160ms" } as React.CSSProperties}
+        >
+          {cf.status}
+        </p>
+        <h2
+          className="disp arrive mt-2 font-bold uppercase leading-[0.85] text-ink group-hover:text-[var(--paper)]"
+          style={{ "--d": "220ms", fontSize: "clamp(56px, 10vw, 148px)" } as React.CSSProperties}
+        >
+          {cf.codename}
+        </h2>
+        <p
+          className="mono arrive mt-4 text-[10.5px] tracking-[0.16em] text-mute group-hover:text-[var(--paper)]"
+          style={{ "--d": "300ms" } as React.CSSProperties}
+        >
+          {cf.id} · {cf.chains.join(" / ").toUpperCase()} · {cf.span.toUpperCase()}
+        </p>
+        <p
+          className="read arrive mt-5 max-w-md text-[14px] group-hover:text-[var(--paper)]"
+          style={{ "--d": "360ms" } as React.CSSProperties}
+        >
+          {cf.summary}
+        </p>
+      </div>
 
-        {/* measured footprint — the stats belong to this file */}
-        <div className="flex flex-col justify-between gap-6 lg:items-end">
-          <div className="lg:text-right">
+      {/* bottom — the measured footprint (this file's own numbers) */}
+      <div className="arrive relative" style={{ "--d": "440ms" } as React.CSSProperties}>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-t border-[var(--line-strong)] pt-4">
+          <div>
             {cf.amountLabel && (
-              <p className="mono text-[10px] tracking-[0.18em] text-mute group-hover:text-[var(--paper)]">
-                {cf.amountLabel}
-              </p>
+              <p className="label group-hover:text-[var(--paper)]">{cf.amountLabel}</p>
             )}
-            <p className="mono mt-1 text-[22px] font-semibold tabular-nums text-signal">
+            <p className="mono mt-1 text-[24px] font-semibold tabular-nums text-signal group-hover:text-[var(--paper)]">
               {cf.amountUsd}
             </p>
-            {meta.drawdown && (
-              <p className="mono mt-1 text-[9.5px] tracking-[0.14em] text-mute group-hover:text-[var(--paper)]">
-                {meta.drawdown}
+          </div>
+          {meta.drawdown && (
+            <p className="mono pb-1 text-[9.5px] tracking-[0.14em] text-mute group-hover:text-[var(--paper)]">
+              {meta.drawdown}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4 grid grid-cols-4 gap-3 border-t border-dashed border-[var(--line-strong)] pt-4">
+          {[
+            [cf.stats.entities, "ENT"],
+            [cf.stats.hops, "LINKS"],
+            [cf.chapters.length, "CH"],
+            [100, "% LOCAL"],
+          ].map(([v, l]) => (
+            <div key={l as string}>
+              <p className="mono text-[16px] font-semibold tabular-nums text-ink group-hover:text-[var(--paper)]">
+                {v}
               </p>
-            )}
-          </div>
+              <p className="label mt-0.5 group-hover:text-[var(--paper)]">{l}</p>
+            </div>
+          ))}
+        </div>
 
-          <div className="grid w-full grid-cols-4 gap-3 border-t border-dashed border-[var(--line-strong)] pt-4 lg:w-auto lg:gap-6">
-            {[
-              [cf.stats.entities, "ENT"],
-              [cf.stats.hops, "LINKS"],
-              [cf.chapters.length, "CH"],
-              [100, "% LOCAL"],
-            ].map(([v, l]) => (
-              <div key={l as string} className="lg:text-right">
-                <p className="mono text-[15px] font-semibold tabular-nums text-ink group-hover:text-[var(--paper)]">
-                  {v}
-                </p>
-                <p className="label mt-0.5 group-hover:text-[var(--paper)]">{l}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 lg:flex-row-reverse">
-            <span className="mono text-[10px] font-semibold tracking-[0.18em] text-signal">
-              OPEN FILE →
-            </span>
-            <span className="mono text-[9.5px] tracking-[0.14em] text-faint group-hover:text-[var(--paper)]">
-              {pct === 0 ? "UNOPENED" : `${pct}% REVIEWED`}
-            </span>
-          </div>
+        <div className="mt-5 flex items-center justify-between">
+          <span className="mono text-[11px] font-semibold tracking-[0.18em] text-signal group-hover:text-[var(--paper)]">
+            OPEN FILE →
+          </span>
+          <span className="mono text-[9.5px] tracking-[0.14em] text-faint group-hover:text-[var(--paper)]">
+            {pct === 0 ? "UNOPENED" : `${pct}% REVIEWED`}
+          </span>
         </div>
       </div>
     </button>
@@ -117,105 +142,47 @@ function CaseRow({
 export default function Landing() {
   return (
     <div className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground">
-      {/* ── header ── */}
-      <header className="hairline-b fixed inset-x-0 top-0 z-30 flex h-12 items-center justify-between bg-[var(--paper)] px-4 sm:px-8">
-        <span className="mono text-[11px] font-semibold tracking-[0.3em] text-ink">
-          TARAONCHAIN<span className="text-signal">®</span>
-        </span>
+      {/* ── header — overlay bar ── */}
+      <header className="fixed inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-[var(--line)] bg-[var(--paper)] px-4 sm:px-8">
+        <div className="flex items-baseline gap-5">
+          <span className="mono text-[11px] font-semibold tracking-[0.3em] text-ink">
+            TARAONCHAIN<span className="text-signal">®</span>
+          </span>
+          <span className="label hidden md:inline">
+            ON-CHAIN FORENSICS · INDEPENDENT CASE ARCHIVE
+          </span>
+        </div>
         <span className="chip">{TUNE.chip}</span>
       </header>
 
-      {/* ── hero — the poster ── */}
-      <section className="flex min-h-[92svh] flex-col justify-between px-4 pb-0 pt-24 sm:px-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <p className="label arrive mb-8" style={{ "--d": "60ms" } as React.CSSProperties}>
-            ON-CHAIN FORENSICS · INDEPENDENT CASE ARCHIVE
-          </p>
+      {/* ── the drawer — doors fill the first screen on desktop ── */}
+      <div className="relative mx-auto flex w-full flex-col pb-0 pt-12 md:h-[100svh] md:max-w-[1600px] md:flex-row md:pb-0">
+        {CASES.map((c, i) => (
+          <Door key={c.id} cf={c} no={i + 1} total={CASES.length} />
+        ))}
 
-          <h1 className="disp font-bold uppercase leading-[0.9] text-ink">
-            <span className="arrive block text-[15vw] sm:text-8xl lg:text-[128px]" style={{ "--d": "140ms" } as React.CSSProperties}>
-              Every chain
-            </span>
-            <span className="arrive block text-[15vw] sm:text-8xl lg:text-[128px]" style={{ "--d": "240ms" } as React.CSSProperties}>
-              leaves a{" "}
-              <span className="text-signal">trace.</span>
-            </span>
-          </h1>
-
-          <div className="arrive mt-10 grid grid-cols-1 gap-8 md:grid-cols-2" style={{ "--d": "380ms" } as React.CSSProperties}>
-            <p className="read max-w-xl text-[15px]">
-              The mempool forgets nothing. TARAONCHAIN conducts independent
-              on-chain investigations tracing wallets, reconstructing movements
-              of funds, and examining the relationships hidden within public
-              transaction data.
-            </p>
-            <p className="read max-w-xl text-[15px]">
-              Every case is built from the chain itself and documented as an
-              interactive investigation — allowing the evidence, transaction
-              paths, and analytical reasoning behind each finding to be
-              examined directly.
-            </p>
-          </div>
+        {/* center spine — the divide doubles as the promise line */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block"
+        >
+          <span className="mono inline-block border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-2 text-[9px] tracking-[0.22em] text-ink-3">
+            SELECT A FILE · READS ENTIRELY LOCAL
+          </span>
         </div>
+      </div>
 
-        {/* meta rule — three measured columns */}
-        <div className="mx-auto mt-16 w-full max-w-6xl">
-          <div className="grid grid-cols-3 border-t border-[var(--line-strong)]">
-            {[
-              ["CASE FILES", "02"],
-              ["TELEMETRY", "ZERO"],
-              ["ARCHIVE MODE", "LOCAL ONLY"],
-            ].map(([l, v], i) => (
-              <div
-                key={l}
-                className={`arrive py-5 ${i > 0 ? "border-l border-[var(--line)] pl-4 sm:pl-6" : ""}`}
-                style={{ "--d": `${500 + i * 90}ms` } as React.CSSProperties}
-              >
-                <p className="label">{l}</p>
-                <p className="mono mt-1.5 text-[13px] font-semibold tracking-[0.08em] text-ink">
-                  {v}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── the index — every published investigation ── */}
-      <section className="px-2 pb-4 pt-20 sm:px-4">
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="mb-6 flex items-end justify-between px-2 sm:px-4">
-            <p className="label">THE ARCHIVE — PUBLISHED CASE FILES</p>
-            <p className="label hidden sm:block">READS ENTIRELY LOCAL · NOTHING LEAVES THIS DEVICE</p>
-          </div>
-          <div>
-            {CASES.map((c, i) => (
-              <CaseRow
-                key={c.id}
-                cf={c}
-                no={String(i + 1).padStart(2, "0")}
-                last={i === CASES.length - 1}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── privacy strip ── */}
-      <section className="hairline-t px-4 py-14 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_auto] md:items-end">
-            <p className="read max-w-xl text-[13px]">
-              This build reads its case data from the bundle in front of you.
-              No account, no database round-trip, no analytics beacon — the
-              only network request is the one that fetched this page.
-            </p>
-            <p className="label md:text-right">
-              TARAONCHAIN · {TUNE.chip} · SINGLE BUILD · {new Date().getFullYear()}
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* ── mobile privacy strip (desktop carries it on the spine) ── */}
+      <footer className="border-t border-[var(--line)] px-5 py-7 md:hidden">
+        <p className="label">NO ACCOUNT · NO DATABASE · NO ANALYTICS</p>
+        <p className="mono mt-2 text-[9.5px] leading-relaxed tracking-[0.08em] text-faint">
+          THIS BUILD READS ITS CASE DATA FROM THE BUNDLE ON YOUR DEVICE. THE
+          ONLY NETWORK REQUEST IS THE ONE THAT FETCHED THIS PAGE.
+        </p>
+        <p className="mono mt-4 text-[9.5px] tracking-[0.18em] text-mute">
+          TARAONCHAIN · {TUNE.chip} · SINGLE BUILD · {new Date().getFullYear()}
+        </p>
+      </footer>
     </div>
   );
 }

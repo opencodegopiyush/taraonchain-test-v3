@@ -37,7 +37,7 @@ export type Tune = {
 };
 
 const DESKTOP_TUNE: Tune = {
-  chip: "V16 · STILL",
+  chip: "V17 · THE DRAWER",
   /* hero trail — retired, landing carries no canvas */
   heroBubbles: 0,
   heroTrailLen: 0,
@@ -63,7 +63,7 @@ const DESKTOP_TUNE: Tune = {
 };
 
 const MOBILE_TUNE: Tune = {
-  chip: "V16 · STILL",
+  chip: "V17 · THE DRAWER",
   heroBubbles: 0,
   heroTrailLen: 0,
   heroTrailAlpha: 0,
