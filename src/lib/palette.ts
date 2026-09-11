@@ -1,28 +1,29 @@
 import type { NodeKind, Epistemic } from "./types";
 
-/* ── v16 "STILL" palette — ink on cool paper, one blue ───────
-   the graph reads like a printed figure in a dossier: flat
-   ink shapes, graphite hairlines, electric blue reserved for
-   the assessed story. no glow, no gradients, no motion dust. */
+/* ── v19 "NIGHT SHIFT" palette — bone on ink-black, one red ──
+   the graph reads like an illuminated plate on a dark bench:
+   luminous flat discs on near-black, bone hairlines, and the
+   hot signal red reserved for the assessed story. no glow,
+   no gradients, no motion dust. */
 
-export const SCENE_BG = "#f5f5f2";
+export const SCENE_BG = "#0b0c0f";
 
 export const NODE_COLORS: Record<NodeKind, string> = {
-  protocol: "#111113", // ink
-  wallet: "#2440f5", // signal blue — wallets are the story
-  contract: "#0f766e", // teal ink
-  mixer: "#c22b1f", // alarm red
-  bridge: "#b06d10", // ochre
-  otc: "#6d5b3a", // umber
-  exchange: "#1f5f8b", // petrol
-  cluster: "#9a9aa2", // graphite
-  vault: "#3f3f46", // pressed ink
+  protocol: "#ece9e0", // bone — the printed anchor
+  wallet: "#ff5233", // signal red — wallets are the story
+  contract: "#45d6a4", // mint ink
+  mixer: "#ff3b5c", // alarm crimson
+  bridge: "#f0b429", // amber
+  otc: "#b48cff", // violet
+  exchange: "#5eb0f5", // sky
+  cluster: "#8b8d95", // graphite
+  vault: "#c9c6bc", // bone-grey
 };
 
 export const EPI_COLORS: Record<Epistemic, string> = {
-  observed: "#111113", // printed fact — solid ink
-  assessed: "#2440f5", // blue — reading between the lines
-  unknown: "#a6a6ad", // graphite ghost
+  observed: "#ece9e0", // printed fact — solid bone
+  assessed: "#ff5233", // signal red — reading between the lines
+  unknown: "#585a62", // ghost graphite
 };
 
 export const EPI_LABEL: Record<Epistemic, string> = {
@@ -51,10 +52,10 @@ export const RISK_LABEL: Record<0 | 1 | 2 | 3, string> = {
 };
 
 export const RISK_COLORS: Record<0 | 1 | 2 | 3, string> = {
-  0: "#a6a6ad",
-  1: "#6d6d74",
-  2: "#b06d10",
-  3: "#c22b1f",
+  0: "#585a62",
+  1: "#8b8d95",
+  2: "#f0b429",
+  3: "#ff3b5c",
 };
 
 export function fmtEth(n: number): string {

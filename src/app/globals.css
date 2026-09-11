@@ -1,42 +1,48 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   TARAONCHAIN — v18 "SPLIT"
-   cool paper, one electric blue, flat print shapes. the
-   landing is a drawer of full-height case doors — the first
-   screen IS the archive. Space Grotesk carries display +
-   reading; IBM Plex Mono carries data.
+   TARAONCHAIN — v19 "NIGHT SHIFT"
+   the first true dark edition. an ink-blue-black reading room,
+   bone type, one hot signal red. the landing is THE READING
+   ROOM: no hero, no list, no doors — one case file under the
+   lamp at a time, slide to pull the next one. the desk keeps
+   the 50/50 terminal and the seam is now YOURS: drag it.
+   Archivo carries display, IBM Plex Mono carries data,
+   Newsreader carries the reading column.
 
-   MOTION BUDGET — the v16 law:
+   MOTION BUDGET — the v16 law, unchanged:
    · the trace plate renders ONLY when something actually
      moves (drag / zoom / chapter ease / selection). settled
      graph = zero draws, zero GPU.
    · the landing carries no canvas at all.
-   · UI motion is ≤220ms CSS transitions. nothing loops.
+   · UI motion is ≤460ms one-shot CSS. nothing loops.
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  --paper: #f5f5f2;
-  --paper-2: #fcfcfa;
-  --paper-deep: #ebebe7;
-  --ink: #111113;
-  --ink-2: #45454a;
-  --ink-3: #7d7d84;
-  --faint: #a6a6ad;
-  --signal: #2440f5;
-  --signal-deep: #1a2fc4;
-  --signal-soft: rgba(36, 64, 245, 0.08);
-  --moss: #0f766e;
-  --smoke: #7d7d84;
-  --line: rgba(17, 17, 19, 0.12);
-  --line-strong: rgba(17, 17, 19, 0.3);
+  /* the room — near-black with a drop of blue */
+  --paper: #0b0c0f;
+  --paper-2: #131519;
+  --paper-deep: #07080a;
+  /* bone type */
+  --ink: #ece9e0;
+  --ink-2: #b7b4ab;
+  --ink-3: #8b8d95;
+  --faint: #585a62;
+  /* one hot signal */
+  --signal: #ff5233;
+  --signal-deep: #ff7052;
+  --signal-soft: rgba(255, 82, 51, 0.14);
+  --moss: #45d6a4;
+  --smoke: #8b8d95;
+  --line: rgba(236, 229, 220, 0.13);
+  --line-strong: rgba(236, 229, 220, 0.28);
   --shadow-sheet:
-    0 1px 2px rgba(17, 17, 19, 0.04),
-    0 10px 34px rgba(17, 17, 19, 0.07);
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 16px 48px rgba(0, 0, 0, 0.5);
 
-  --font-disp: "Space Grotesk Variable", "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-disp: "Archivo Variable", "Archivo", "Inter", system-ui, sans-serif;
   --font-ui: "IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
-  --font-read: "Space Grotesk Variable", "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-read: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
 }
 
 @theme inline {
@@ -73,7 +79,7 @@
 
   html {
     background: var(--paper);
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
@@ -88,8 +94,8 @@
   }
 
   ::selection {
-    background: rgba(36, 64, 245, 0.14);
-    color: var(--signal-deep);
+    background: rgba(255, 82, 51, 0.32);
+    color: #fff;
   }
 }
 
@@ -103,12 +109,12 @@
   }
   .disp {
     font-family: var(--font-disp);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
   }
   .read {
     font-family: var(--font-read);
-    font-size: 15px;
-    line-height: 1.72;
+    font-size: 15.5px;
+    line-height: 1.78;
     color: var(--ink-2);
   }
 
@@ -120,7 +126,7 @@
     color: var(--ink-3);
   }
 
-  /* ── surfaces — flat sheets, never glass, never shadow soup ── */
+  /* ── surfaces — flat sheets in the dark ───────────────────── */
 
   .panel {
     background: var(--paper-2);
@@ -128,7 +134,7 @@
   }
 
   .panel-deep {
-    background: var(--paper-2);
+    background: var(--paper-deep);
     border: 1px solid var(--line);
   }
 
@@ -172,18 +178,20 @@
     cursor: pointer;
   }
 
+  /* the primary — bone plate, ink letters; flips to signal */
   .btn-gold {
     background: var(--ink);
-    color: var(--paper-2);
+    color: var(--paper-deep);
     border: 1px solid var(--ink);
     font-weight: 600;
   }
   .btn-gold:hover {
     background: var(--signal);
     border-color: var(--signal);
+    color: var(--paper-deep);
   }
   .btn-gold:disabled {
-    background: var(--paper-deep);
+    background: var(--paper-2);
     border-color: var(--line);
     color: var(--faint);
   }
@@ -216,16 +224,22 @@
     white-space: nowrap;
   }
 
+  /* the rubber stamp — signal red, printed crooked */
   .stamp {
     font-family: var(--font-ui);
     font-weight: 600;
     font-size: 9.5px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: var(--signal-deep);
+    color: var(--signal);
     border: 1.5px solid currentColor;
     padding: 5px 8px 5px 11px;
     display: inline-block;
+  }
+  .stamp-fill {
+    background: var(--signal);
+    border-color: var(--signal);
+    color: var(--paper-deep);
   }
 
   .tag {
@@ -244,21 +258,21 @@
   .tag-fill {
     background: var(--signal);
     border-color: var(--signal);
-    color: #fff;
+    color: var(--paper-deep);
   }
 
   /* ── scrollbars ───────────────────────────────────────────── */
 
   .slim-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgba(17, 17, 19, 0.24) transparent;
+    scrollbar-color: rgba(236, 229, 220, 0.22) transparent;
   }
   .slim-scroll::-webkit-scrollbar {
     width: 5px;
     height: 5px;
   }
   .slim-scroll::-webkit-scrollbar-thumb {
-    background: rgba(17, 17, 19, 0.24);
+    background: rgba(236, 229, 220, 0.22);
     border-radius: 4px;
   }
   .slim-scroll::-webkit-scrollbar-track {
@@ -277,10 +291,10 @@
       opacity 0.2s ease;
   }
 
-  /* ── v16 motion — the quiet language ────────────────────────
+  /* ── v19 motion — the quiet language ────────────────────────
      one entrance (rise 8px / 0.45s, staggered by --d) and one
-     reveal (fade 0.3s on scroll into view). nothing loops,
-     nothing tracks the pointer, nothing runs after landing. */
+     reveal (fade 0.3s). nothing loops, nothing tracks the
+     pointer, nothing runs after the first paint settles. */
 
   .rise {
     opacity: 0;
@@ -304,37 +318,56 @@
     animation: fade-in 0.3s ease both;
   }
 
-  /* v17 door — the whole case door floods signal blue under
-     the pointer. pure CSS, one paint, 160ms. */
-  .door-flip {
-    transition: background 0.16s ease, color 0.16s ease;
-  }
-  .door-flip:hover,
-  .door-flip:focus-visible {
-    background: var(--signal);
-  }
-  .door-flip:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: -2px;
+  /* the lamp — a static pool of light over the reading room
+     bench. one paint, never animates. */
+  .lamp-glow {
+    pointer-events: none;
+    background:
+      radial-gradient(
+        900px 540px at 50% 34%,
+        rgba(255, 82, 51, 0.075),
+        transparent 62%
+      ),
+      radial-gradient(
+        1500px 920px at 50% 28%,
+        rgba(236, 229, 220, 0.055),
+        transparent 64%
+      );
   }
 
-  /* watermark numeral on a door — hollow print stroke */
-  .stroke-num {
-    font-family: var(--font-disp);
-    letter-spacing: -0.04em;
-    color: transparent;
-    -webkit-text-stroke: 1.5px rgba(17, 17, 19, 0.16);
-    transition: -webkit-text-stroke-color 0.16s ease;
+  /* the reading-room track — one file under the lamp at a
+     time; the transform is the only property that moves */
+  .rr-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .door-flip:hover .stroke-num,
-  .door-flip:focus-visible .stroke-num {
-    -webkit-text-stroke-color: rgba(245, 245, 242, 0.35);
+  .rr-slide {
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+
+  /* the stamp slams ONCE per file switch, then holds still */
+  .stamp-slam {
+    animation: slam 0.3s cubic-bezier(0.2, 1.6, 0.35, 1) both;
+    animation-delay: var(--d, 0.22s);
+  }
+
+  /* the desk-edge tabs — file spines standing on their end */
+  .edge-tab {
+    writing-mode: vertical-rl;
+  }
+
+  /* centering that never clips: falls back to start when the
+     content is taller than the box (the flexbox center trap) */
+  .justify-safe {
+    justify-content: safe center;
   }
 
   /* thin measured progress line (reviewed %) */
   .meter {
     height: 2px;
-    background: var(--paper-deep);
+    background: var(--paper-2);
     overflow: hidden;
   }
   .meter > span {
@@ -344,7 +377,7 @@
     transition: width 0.6s cubic-bezier(0.65, 0, 0.2, 1);
   }
 
-  /* underlined tab — ink text, blue underline slides */
+  /* underlined tab — ink text, signal underline slides */
   .tab {
     font-family: var(--font-ui);
     font-size: 10px;
@@ -398,15 +431,33 @@
   }
 }
 
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: rotate(-2deg) scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-2deg) scale(1);
+  }
+}
+
 /* ── reduced motion — everything simply shows ──────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .arrive,
-  .fade-in {
+  .fade-in,
+  .stamp-slam {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+  .stamp-slam {
+    transform: rotate(-2deg) !important;
+  }
+  .rr-track {
+    transition: none !important;
   }
 }

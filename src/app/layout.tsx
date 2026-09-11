@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/archivo";
+import "@fontsource-variable/newsreader";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "@fontsource/ibm-plex-mono/600.css";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f5f2",
+  themeColor: "#0b0c0f",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

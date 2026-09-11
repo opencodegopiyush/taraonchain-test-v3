@@ -5,9 +5,10 @@ import { useStore } from "@/lib/store";
 import { EPI_COLORS, EPI_LABEL, KIND_LABEL, NODE_COLORS } from "@/lib/palette";
 import type { CaseFile, Chapter } from "@/lib/types";
 
-/* ── chapter reader — v18 "SPLIT": the report half ──────────
+/* ── chapter reader — v19 "NIGHT SHIFT": the report half ───
    the report lives in its OWN half of the terminal and
-   scrolls inside itself (the plate never moves away). a
+   scrolls inside itself (the plate never moves away) — and
+   the seam between the halves is draggable now. a
    scrollspy — one IntersectionObserver rooted to this very
    pane — tells the store which chapter you're reading, and
    the trace plate eases its camera to that chapter's authored
@@ -64,7 +65,7 @@ function CaseHead({ cf }: { cf: CaseFile }) {
   return (
     <header className="px-5 pb-12 pt-10 sm:px-10 lg:px-14 lg:pt-16" data-ch-head>
       <p className="label">CASE FILE · {cf.id}</p>
-      <h1 className="disp mt-3 text-[15vw] font-bold uppercase leading-[0.9] text-ink sm:text-7xl lg:text-[92px]">
+      <h1 className="disp mt-3 text-[15vw] font-black uppercase leading-[0.9] text-ink sm:text-7xl lg:text-[92px]">
         {cf.codename}
       </h1>
       <p className="mono mt-4 text-[10.5px] tracking-[0.16em] text-mute">
@@ -111,7 +112,7 @@ function ChapterSection({ cf, ch, idx }: { cf: CaseFile; ch: Chapter; idx: numbe
 
         <div className="min-w-0 flex-1">
           <p className="label">{ch.kicker}</p>
-          <h2 className="disp mt-1.5 text-[24px] font-bold uppercase leading-[1.02] text-ink sm:text-[32px]">
+          <h2 className="disp mt-1.5 text-[24px] font-extrabold uppercase leading-[1.02] text-ink sm:text-[32px]">
             {ch.title}
           </h2>
 

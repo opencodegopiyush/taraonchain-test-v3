@@ -1,39 +1,69 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import TraceCanvas from "@/engine/TraceCanvas";
 import TopBar from "./TopBar";
 import ChapterReader from "./ChapterReader";
 import Inspector, { EntityPane } from "./Inspector";
+import { EPI_COLORS } from "@/lib/palette";
 
-/* ── case desk — v18 "SPLIT" ─────────────────────────────────
-   the report stops being a scrolling page with a figure glued
-   to it. the desk is a fixed TERMINAL cut exactly 50/50:
-   · the trace plate owns the top half (left half on desktop)
-   · the report owns the other half
-   both are always on screen; neither ever covers the other.
-   the reader scrolls INSIDE its half and the scrollspy
-   retargets the authored chapter cameras as you read.
-   tapping a bubble swaps the report half to that entity's
-   full record (EntityPane) while the plate keeps running
-   above it — ✕ returns to the report where you left off. */
+/* ── case desk — v19 "NIGHT SHIFT" ───────────────────────────
+   the terminal keeps the 50/50 cut that v18 introduced — but
+   the seam is now YOURS. drag the grip to rebalance the halves
+   (36–64%), double-tap it to snap back to exactly 50 / 50, and
+   the live ratio is printed right on the grip. the plate eases
+   its camera as you read (the scrollspy lives in the report
+   pane); tapping a bubble swaps the report half to that
+   entity's full record while the plate keeps running. */
+
+const MIN = 36;
+const MAX = 64;
 
 export default function CaseDesk() {
   const cf = useStore((s) => s.caseFile);
+  const [split, setSplit] = useState(50);
+  const [grabbing, setGrabbing] = useState(false);
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const dragging = useRef(false);
 
   /* the reader is a fresh document — always open at the top */
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  const onSeamDown = (e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragging.current = true;
+    setGrabbing(true);
+  };
+
+  const onSeamMove = (e: React.PointerEvent) => {
+    if (!dragging.current || !shellRef.current) return;
+    const r = shellRef.current.getBoundingClientRect();
+    const vertical = window.innerWidth < 1024;
+    const pct = vertical
+      ? ((e.clientY - r.top) / r.height) * 100
+      : ((e.clientX - r.left) / r.width) * 100;
+    setSplit(Math.min(MAX, Math.max(MIN, Math.round(pct * 2) / 2)));
+  };
+
+  const onSeamUp = () => {
+    dragging.current = false;
+    setGrabbing(false);
+  };
+
   return (
     <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
       <TopBar />
 
-      <div className="flex min-h-0 w-full flex-1 flex-col lg:flex-row">
+      <div
+        ref={shellRef}
+        className="flex min-h-0 w-full flex-1 flex-col lg:flex-row"
+        style={{ "--split": `${split}%` } as React.CSSProperties}
+      >
         {/* ── the plate — the upper (left) half, always live ── */}
-        <div className="relative h-1/2 w-full shrink-0 border-b border-[var(--line-strong)] lg:h-full lg:w-1/2 lg:border-b-0 lg:border-r">
+        <div className="relative h-[var(--split)] min-h-[220px] w-full shrink-0 lg:h-full lg:w-[var(--split)] lg:min-h-0">
           <TraceCanvas />
 
           {/* fig caption + touch hint */}
@@ -50,15 +80,24 @@ export default function CaseDesk() {
           <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-5 lg:left-5 lg:flex">
             <div className="flex flex-col gap-1 bg-[var(--paper)] px-2.5 py-2">
               <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#111113" }} />
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: EPI_COLORS.observed }}
+                />
                 OBSERVED
               </span>
               <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#2440f5" }} />
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: EPI_COLORS.assessed }}
+                />
                 ASSESSED
               </span>
               <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
-                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#a6a6ad" }} />
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: EPI_COLORS.unknown }}
+                />
                 UNKNOWN
               </span>
             </div>
@@ -66,11 +105,41 @@ export default function CaseDesk() {
 
           <Recenter />
 
-          {/* chapter ruler — the plate's bottom edge (the 50/50
-              seam) doubles as the table of contents */}
+          {/* chapter ruler — the plate's bottom edge doubles as the
+              table of contents */}
           <Ruler />
 
           <Inspector />
+        </div>
+
+        {/* ── the seam — grab it; the ratio is yours ── */}
+        <div
+          role="separator"
+          aria-label="Drag to rebalance the split"
+          aria-valuenow={Math.round(split)}
+          aria-valuemin={MIN}
+          aria-valuemax={MAX}
+          onPointerDown={onSeamDown}
+          onPointerMove={onSeamMove}
+          onPointerUp={onSeamUp}
+          onPointerCancel={onSeamUp}
+          onDoubleClick={() => setSplit(50)}
+          title="Drag to rebalance · double-tap for 50 / 50"
+          className={`relative z-20 flex h-8 w-full shrink-0 touch-none select-none items-center justify-center border-y border-[var(--line-strong)] transition-colors lg:h-auto lg:w-8 lg:flex-col lg:border-y-0 lg:border-l lg:border-r ${
+            grabbing ? "bg-[var(--paper-2)]" : "bg-[var(--paper)]"
+          } ${grabbing ? "cursor-grabbing" : "cursor-row-resize lg:cursor-col-resize"}`}
+        >
+          <span
+            className="mono flex items-center gap-1.5 border px-2 py-1 text-[8.5px] tabular-nums tracking-[0.14em] lg:px-1.5 lg:py-2"
+            style={{
+              color: grabbing ? "var(--signal)" : "var(--ink-3)",
+              borderColor: grabbing ? "var(--signal)" : "var(--line-strong)",
+            }}
+          >
+            <span className="hidden lg:inline">·</span>
+            {Math.round(split)} / {100 - Math.round(split)}
+            <span className="hidden lg:inline">·</span>
+          </span>
         </div>
 
         {/* ── the report — the other half; scrolls inside itself ── */}

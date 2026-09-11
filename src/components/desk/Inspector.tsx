@@ -13,16 +13,15 @@ import {
 } from "@/lib/palette";
 import type { CaseEdge, CaseNode } from "@/lib/types";
 
-/* ── entity record — v18 "SPLIT" ─────────────────────────────
+/* ── entity record — v19 "NIGHT SHIFT" ───────────────────────
    ONE record, TWO shells:
    · desktop — floating specimen card pinned inside the plate
-     half (unchanged from v16).
+     half.
    · mobile — the terminal swap: selecting a bubble replaces
      the REPORT half with the entity's full record while the
      trace plate keeps owning the upper half. the graph never
      leaves sight; tap another bubble to compare, ✕ returns to
-     the report exactly where you left it. v17's covering
-     sheet is retired — nothing covers the graph anymore.
+     the report exactly where you left it.
 
    ── v8 copy — works on mobile + plain http ──
    navigator.clipboard only exists in secure contexts. over
@@ -160,7 +159,7 @@ function TabsRow({
               <span
                 className="rounded-sm px-1 text-[9px] tabular-nums"
                 style={{
-                  background: active ? "rgba(36,64,245,0.1)" : "rgba(17,17,19,0.06)",
+                  background: active ? "var(--signal-soft)" : "rgba(236, 229, 220, 0.08)",
                   color: active ? "var(--signal-deep)" : "var(--faint)",
                 }}
               >
@@ -186,7 +185,7 @@ export default function Inspector() {
       style={{
         background: "var(--paper-2)",
         borderColor: "var(--line-strong)",
-        boxShadow: "0 12px 44px rgba(23, 21, 14, 0.14)",
+        boxShadow: "0 18px 60px rgba(0, 0, 0, 0.55)",
       }}
     >
       <Record node={node} cf={cf} />
@@ -287,7 +286,7 @@ function Overview({
   return (
     <div className="space-y-4">
       <button
-        className="mono flex w-full items-center justify-between gap-2 border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
+        className="mono flex w-full items-center justify-between gap-2 border bg-[var(--paper-2)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         onClick={() => copy(node.address, "addr")}
       >
         <span className="truncate text-[11px] text-ink">{node.address}</span>
@@ -312,7 +311,7 @@ function Overview({
           ["SENT", node.sent],
           ["BALANCE", node.balance],
         ].map(([l, v]) => (
-          <div key={l as string} className="bg-[var(--paper)] px-1.5 py-3 text-center">
+          <div key={l as string} className="bg-[var(--paper-2)] px-1.5 py-3 text-center">
             <p className="mono text-[12px] font-semibold tabular-nums text-ink">
               {fmtEth(v as number)}
               <span className="ml-0.5 text-[8px] text-faint">{unit}</span>
@@ -344,15 +343,18 @@ function Overview({
       )}
 
       {node.note && (
-        <p className="read border-l-2 border-[rgba(36,64,245,0.45)] pl-3 text-[13.5px]">
+        <p
+          className="read border-l-2 pl-3 text-[13.5px]"
+          style={{ borderColor: "rgba(255, 82, 51, 0.5)" }}
+        >
           {node.note}
         </p>
       )}
 
       {node.attribution && (
         <div
-          className="border bg-[var(--paper)] px-3 py-3"
-          style={{ borderColor: "rgba(36,64,245,0.45)" }}
+          className="border bg-[var(--paper-2)] px-3 py-3"
+          style={{ borderColor: "rgba(255, 82, 51, 0.5)" }}
         >
           <p className="label mb-1.5" style={{ color: "var(--signal-deep)" }}>
             ATTRIBUTION · {node.attribution.confidence.toUpperCase()} CONFIDENCE
@@ -383,7 +385,7 @@ function Links({
         <button
           key={e.id}
           onClick={() => other && selectNode(other.id)}
-          className="flex w-full items-center gap-2.5 border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
+          className="flex w-full items-center gap-2.5 border bg-[var(--paper-2)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         >
           <span
             className="mono shrink-0 text-[13px]"
@@ -427,7 +429,7 @@ function Txns({
         <button
           key={`${t.hash}-${i}`}
           onClick={() => copy(t.hash, `tx${i}`)}
-          className="block w-full border bg-[var(--paper)] px-3 py-2.5 text-left transition-colors hover:border-ink"
+          className="block w-full border bg-[var(--paper-2)] px-3 py-2.5 text-left transition-colors hover:border-ink"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="mono truncate text-[11px] text-ink">

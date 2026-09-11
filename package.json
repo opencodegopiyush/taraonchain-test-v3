@@ -1,6 +1,6 @@
 {
   "name": "taraonchain",
-  "version": "18.0.0",
+  "version": "19.0.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -12,7 +12,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
     "@fontsource-variable/source-serif-4": "^5.3.0",
     "@fontsource-variable/space-grotesk": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",

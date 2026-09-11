@@ -1,4 +1,4 @@
-/* ── v16 "STILL" SINGLE BUILD — one binary, auto-tuned ──────
+/* ── v19 "NIGHT SHIFT" SINGLE BUILD — one binary, auto-tuned ──────
    v16's law: the graph moves only when YOU move it. the
    tuning tables keep their shape (the engine still reads
    them) but every idle-animation knob is pinned to zero:
@@ -37,7 +37,7 @@ export type Tune = {
 };
 
 const DESKTOP_TUNE: Tune = {
-  chip: "V18 · SPLIT",
+  chip: "V19 · NIGHT SHIFT",
   /* hero trail — retired, landing carries no canvas */
   heroBubbles: 0,
   heroTrailLen: 0,
@@ -63,7 +63,7 @@ const DESKTOP_TUNE: Tune = {
 };
 
 const MOBILE_TUNE: Tune = {
-  chip: "V18 · SPLIT",
+  chip: "V19 · NIGHT SHIFT",
   heroBubbles: 0,
   heroTrailLen: 0,
   heroTrailAlpha: 0,

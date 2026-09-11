@@ -1,186 +1,309 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore, reviewedPct } from "@/lib/store";
 import { CASES } from "@/lib/case-data";
 import type { CaseFile } from "@/lib/types";
 import { TUNE } from "@/lib/edition";
 
-/* ── v17 landing — THE DRAWER ────────────────────────────────
-   every landing before this one was a page you SCROLLED: a
-   hero block, then a vertical list of files. v17 has no hero
-   and no list. the archive opens as a drawer of full-height
-   case DOORS — the first screen IS the archive. two files
-   side by side on desktop (pull the folder you want), stacked
-   full-height on mobile. zero canvas, zero particles, zero
-   observers, zero count-ups. the only motion is staggered
-   CSS entrances and one 160ms hover flood. */
+/* ── v19 landing — THE READING ROOM ──────────────────────────
+   v13/14 was a terminal with a particle word, v15/16 a paper
+   index of rows, v17 a drawer of doors, v18 kept all of that.
+   every one of them put the WHOLE archive on screen at once.
 
-/* per-case door chrome — tag + drawdown are report facts */
-const DOOR_META: Record<string, { tag: string; fill?: boolean; drawdown: string }> = {
-  "R-0905": { tag: "LATEST", fill: true, drawdown: "−99.3% FROM PEAK" },
-  "S-0830": { tag: "ARCHIVED", drawdown: "−98.8% FROM PEAK" },
+   v19 is a dark reading room with no hero and no list: the
+   lamp is on, and ONE case file lies on the bench — its name,
+   its story, its measured footprint. the next file waits at
+   the right edge of the desk; pull it (edge tab / swipe /
+   arrows / the switcher) and it slides under the lamp while
+   the current one slides away. the stamp slams once per pull,
+   then the room is still.
+
+   zero canvas, zero particles, zero observers, zero count-ups.
+   the only motion: one transform on the track, staggered CSS
+   entrances, one stamp slam. */
+
+/* per-file chrome — stamp + drawdown are report facts */
+const FILE_META: Record<string, { stamp: string; fill?: boolean; drawdown: string }> = {
+  "R-0905": { stamp: "CLOSED", fill: true, drawdown: "−99.3% FROM PEAK" },
+  "S-0830": { stamp: "ARCHIVED", drawdown: "−98.8% FROM PEAK" },
 };
 
-/* ── one door = one case file. the WHOLE DOOR is the button. ── */
-function Door({ cf, no, total }: { cf: CaseFile; no: number; total: number }) {
+/* ── one plate = one case file under the lamp ─────────────── */
+function FilePlate({ cf, no, total }: { cf: CaseFile; no: number; total: number }) {
   const openCase = useStore((s) => s.openCase);
   const visited = useStore((s) => s.visited);
   const pct = reviewedPct({ visited, caseFile: cf });
-  const meta = DOOR_META[cf.id] ?? { tag: "DECLASSIFIED", drawdown: "" };
+  const meta = FILE_META[cf.id] ?? { stamp: "DECLASSIFIED", drawdown: "" };
 
   return (
-    <button
-      onClick={() => openCase(cf.id)}
-      aria-label={`Open case file ${cf.id} — ${cf.codename}`}
-      className={`door-flip group relative flex min-h-[92svh] w-full shrink-0 flex-col justify-between overflow-hidden p-6 text-left sm:p-10 md:min-h-0 md:w-auto md:flex-1 md:p-8 lg:p-12 ${
-        no < total ? "border-b border-[var(--line-strong)] md:border-b-0 md:border-r" : ""
-      }`}
-    >
-      {/* watermark numeral — hollow print stroke */}
-      <span
-        aria-hidden
-        className="stroke-num pointer-events-none absolute -bottom-[3vw] right-2 select-none font-bold leading-none md:-bottom-[1.5vw] md:right-6"
-        style={{ fontSize: "clamp(140px, 24vw, 340px)" }}
-      >
-        {String(no).padStart(2, "0")}
-      </span>
-
-      {/* top — file index + status */}
+    <div className="mx-auto flex min-h-full w-full max-w-[1200px] flex-col px-5 py-8 sm:px-10 sm:py-10 lg:px-20">
+      {/* row 1 — file index + the stamp (mt-auto = safe centering:
+          centers when there's room, scrolls when there isn't) */}
       <div
-        className="arrive relative flex items-center justify-between gap-3"
-        style={{ "--d": "80ms" } as React.CSSProperties}
+        className="arrive mt-auto flex items-center justify-between gap-4"
+        style={{ "--d": "60ms" } as React.CSSProperties}
       >
-        <span className="mono text-[11px] font-semibold tracking-[0.22em] text-signal group-hover:text-[var(--paper)]">
-          FILE {String(no).padStart(2, "0")} / {String(total).padStart(2, "0")}
-        </span>
+        <p className="mono text-[11px] font-semibold tracking-[0.24em] text-signal">
+          FILE {String(no).padStart(2, "0")} / {String(total).padStart(2, "0")} · {cf.id}
+        </p>
         <span
-          className={
-            meta.fill
-              ? "tag tag-fill"
-              : "tag group-hover:border-[var(--paper)] group-hover:text-[var(--paper)]"
-          }
+          key={`${cf.id}-stamp`}
+          className={`stamp stamp-slam ${meta.fill ? "stamp-fill" : ""}`}
         >
-          {meta.tag}
+          {meta.stamp}
         </span>
       </div>
 
-      {/* middle — the name */}
-      <div className="relative py-12 md:py-8">
+      {/* row 2 — the name */}
+      <h2
+        className="arrive disp mt-3 font-black uppercase leading-[0.86] text-ink sm:mt-4"
+        style={{ "--d": "140ms", fontSize: "clamp(58px, 11vw, 176px)" } as React.CSSProperties}
+      >
+        {cf.codename}
+      </h2>
+      <p
+        className="mono arrive mt-2.5 text-[10px] tracking-[0.16em] text-mute sm:mt-3 sm:text-[10.5px]"
+        style={{ "--d": "220ms" } as React.CSSProperties}
+      >
+        {cf.chains.join(" / ").toUpperCase()} · {cf.span.toUpperCase()} · UNIT{" "}
+        {cf.unit ?? "ETH"}
+        {meta.drawdown ? ` · ${meta.drawdown}` : ""}
+      </p>
+
+      {/* row 3 — the abstract, two measured columns on a wide desk */}
+      <div className="hairline-t mt-5 pt-5 sm:mt-6 sm:pt-6">
         <p
-          className="label arrive group-hover:text-[var(--paper)]"
-          style={{ "--d": "160ms" } as React.CSSProperties}
-        >
-          {cf.status}
-        </p>
-        <h2
-          className="disp arrive mt-2 font-bold uppercase leading-[0.85] text-ink group-hover:text-[var(--paper)]"
-          style={{ "--d": "220ms", fontSize: "clamp(56px, 10vw, 148px)" } as React.CSSProperties}
-        >
-          {cf.codename}
-        </h2>
-        <p
-          className="mono arrive mt-4 text-[10.5px] tracking-[0.16em] text-mute group-hover:text-[var(--paper)]"
+          className="read arrive max-w-[1080px] text-[15px] sm:text-[15.5px] lg:columns-2 lg:gap-14"
           style={{ "--d": "300ms" } as React.CSSProperties}
-        >
-          {cf.id} · {cf.chains.join(" / ").toUpperCase()} · {cf.span.toUpperCase()}
-        </p>
-        <p
-          className="read arrive mt-5 max-w-md text-[14px] group-hover:text-[var(--paper)]"
-          style={{ "--d": "360ms" } as React.CSSProperties}
         >
           {cf.summary}
         </p>
       </div>
 
-      {/* bottom — the measured footprint (this file's own numbers) */}
-      <div className="arrive relative" style={{ "--d": "440ms" } as React.CSSProperties}>
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-t border-[var(--line-strong)] pt-4">
-          <div>
-            {cf.amountLabel && (
-              <p className="label group-hover:text-[var(--paper)]">{cf.amountLabel}</p>
-            )}
-            <p className="mono mt-1 text-[24px] font-semibold tabular-nums text-signal group-hover:text-[var(--paper)]">
-              {cf.amountUsd}
-            </p>
-          </div>
-          {meta.drawdown && (
-            <p className="mono pb-1 text-[9.5px] tracking-[0.14em] text-mute group-hover:text-[var(--paper)]">
-              {meta.drawdown}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-4 grid grid-cols-4 gap-3 border-t border-dashed border-[var(--line-strong)] pt-4">
-          {[
-            [cf.stats.entities, "ENT"],
+      {/* row 4 — the measured footprint (this file's own numbers) */}
+      <div
+        className="arrive mt-6 grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] sm:grid-cols-5"
+        style={{ "--d": "380ms" } as React.CSSProperties}
+      >
+        {(
+          [
+            [cf.stats.entities, "ENTITIES"],
             [cf.stats.hops, "LINKS"],
-            [cf.chapters.length, "CH"],
-            [100, "% LOCAL"],
-          ].map(([v, l]) => (
-            <div key={l as string}>
-              <p className="mono text-[16px] font-semibold tabular-nums text-ink group-hover:text-[var(--paper)]">
-                {v}
-              </p>
-              <p className="label mt-0.5 group-hover:text-[var(--paper)]">{l}</p>
-            </div>
-          ))}
-        </div>
+            [cf.chapters.length, "CHAPTERS"],
+            [cf.unit ?? "ETH", "UNIT"],
+            [cf.amountUsd, "PEAK"],
+          ] as [string | number, string][]
+        ).map(([v, l]) => (
+          <div key={l} className="bg-[var(--paper)] px-3.5 py-3">
+            <p
+              className={`mono text-[15px] font-semibold tabular-nums ${
+                l === "PEAK" ? "text-signal" : "text-ink"
+              }`}
+            >
+              {v}
+            </p>
+            <p className="label mt-1">{l}</p>
+          </div>
+        ))}
+      </div>
 
-        <div className="mt-5 flex items-center justify-between">
-          <span className="mono text-[11px] font-semibold tracking-[0.18em] text-signal group-hover:text-[var(--paper)]">
-            OPEN FILE →
-          </span>
-          <span className="mono text-[9.5px] tracking-[0.14em] text-faint group-hover:text-[var(--paper)]">
-            {pct === 0 ? "UNOPENED" : `${pct}% REVIEWED`}
-          </span>
+      {/* row 5 — pull the file */}
+      <div
+        className="arrive mb-auto mt-6 flex flex-wrap items-center gap-x-6 gap-y-4 sm:mt-7"
+        style={{ "--d": "460ms" } as React.CSSProperties}
+      >
+        <button
+          onClick={() => openCase(cf.id)}
+          className="btn btn-gold w-full sm:w-auto sm:min-w-[280px]"
+          aria-label={`Open case file ${cf.id} — ${cf.codename}`}
+        >
+          OPEN FILE →
+        </button>
+        <div className="min-w-0">
+          {cf.amountLabel && <p className="label">{cf.amountLabel}</p>}
+          <p className="mono mt-1.5 text-[9.5px] tracking-[0.14em] text-faint">
+            {pct === 0 ? "UNOPENED ON THIS DEVICE" : `${pct}% REVIEWED ON THIS DEVICE`}
+          </p>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 export default function Landing() {
+  const [idx, setIdx] = useState(0);
+  const total = CASES.length;
+
+  const go = useCallback(
+    (n: number) => setIdx(((n % total) + total) % total),
+    [total],
+  );
+
+  /* keyboard — ← → walk the archive */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setIdx((i) => (i + 1) % total);
+      else if (e.key === "ArrowLeft") setIdx((i) => (i - 1 + total) % total);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
+  /* swipe — pull the next file off the desk edge */
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const onDown = (e: React.PointerEvent) => {
+    swipe.current = { x: e.clientX, y: e.clientY };
+  };
+  const onUp = (e: React.PointerEvent) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s) return;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      setIdx((i) => (dx < 0 ? (i + 1) % total : (i - 1 + total) % total));
+    }
+  };
+
+  const next = CASES[(idx + 1) % total];
+  const prev = CASES[(idx - 1 + total) % total];
+
   return (
-    <div className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground">
-      {/* ── header — overlay bar ── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-[var(--line)] bg-[var(--paper)] px-4 sm:px-8">
-        <div className="flex items-baseline gap-5">
-          <span className="mono text-[11px] font-semibold tracking-[0.3em] text-ink">
+    <div className="relative flex h-[100svh] flex-col overflow-hidden bg-background text-foreground">
+      {/* ── top chrome — the room's signage ── */}
+      <header className="hairline-b z-30 flex h-12 shrink-0 items-center justify-between gap-3 bg-[var(--paper)] px-4 sm:px-8">
+        <div className="flex min-w-0 items-baseline gap-5">
+          <span className="mono shrink-0 text-[11px] font-semibold tracking-[0.3em] text-ink">
             TARAONCHAIN<span className="text-signal">®</span>
           </span>
-          <span className="label hidden md:inline">
-            ON-CHAIN FORENSICS · INDEPENDENT CASE ARCHIVE
+          <span className="label hidden truncate md:inline">
+            CASE ARCHIVE · ON-CHAIN FORENSICS · THE READING ROOM
           </span>
         </div>
-        <span className="chip">{TUNE.chip}</span>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="mono hidden items-center gap-2 text-[9px] tracking-[0.18em] text-mute sm:flex">
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ background: "var(--moss)" }}
+            />
+            LOCAL READ
+          </span>
+          <span className="chip">{TUNE.chip}</span>
+        </div>
       </header>
 
-      {/* ── the drawer — doors fill the first screen on desktop ── */}
-      <div className="relative mx-auto flex w-full flex-col pb-0 pt-12 md:h-[100svh] md:max-w-[1600px] md:flex-row md:pb-0">
-        {CASES.map((c, i) => (
-          <Door key={c.id} cf={c} no={i + 1} total={CASES.length} />
-        ))}
+      {/* ── the stage — one file under the lamp ── */}
+      <div
+        className="relative min-h-0 flex-1 overflow-hidden"
+        style={{ touchAction: "pan-y" }}
+        onPointerDown={onDown}
+        onPointerUp={onUp}
+        onPointerCancel={() => (swipe.current = null)}
+      >
+        <div className="lamp-glow absolute inset-0" aria-hidden />
 
-        {/* center spine — the divide doubles as the promise line */}
         <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block"
+          className="rr-track"
+          style={{ transform: `translateX(-${idx * 100}%)` }}
         >
-          <span className="mono inline-block border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-2 text-[9px] tracking-[0.22em] text-ink-3">
-            SELECT A FILE · READS ENTIRELY LOCAL
-          </span>
+          {CASES.map((c, i) => (
+            <div
+              className="rr-slide h-full overflow-y-auto overscroll-contain slim-scroll"
+              key={c.id}
+              inert={i !== idx || undefined}
+              aria-hidden={i !== idx}
+            >
+              <FilePlate cf={c} no={i + 1} total={total} />
+            </div>
+          ))}
         </div>
+
+        {/* the next file waits at the desk edge — pull it (desktop) */}
+        <button
+          onClick={() => go(idx + 1)}
+          className="edge-tab absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 cursor-pointer items-center border-y border-l border-[var(--line-strong)] bg-[var(--paper-2)] px-3 py-7 transition-colors hover:border-signal hover:text-signal lg:flex"
+          title={`Pull the next file — ${next.codename}`}
+        >
+          <span className="mono text-[9px] tracking-[0.24em] text-mute">
+            NEXT FILE · {next.codename} →
+          </span>
+        </button>
+
+        {/* …and the previous one sits on the left edge */}
+        <button
+          onClick={() => go(idx - 1)}
+          className="edge-tab absolute left-0 top-1/2 z-10 hidden -translate-y-1/2 cursor-pointer items-center border-y border-r border-[var(--line-strong)] bg-[var(--paper-2)] px-3 py-7 transition-colors hover:border-signal hover:text-signal lg:flex"
+          title={`Pull — ${prev.codename}`}
+        >
+          <span className="mono text-[9px] tracking-[0.24em] text-mute">
+            ← {prev.codename}
+          </span>
+        </button>
       </div>
 
-      {/* ── mobile privacy strip (desktop carries it on the spine) ── */}
-      <footer className="border-t border-[var(--line)] px-5 py-7 md:hidden">
-        <p className="label">NO ACCOUNT · NO DATABASE · NO ANALYTICS</p>
-        <p className="mono mt-2 text-[9.5px] leading-relaxed tracking-[0.08em] text-faint">
-          THIS BUILD READS ITS CASE DATA FROM THE BUNDLE ON YOUR DEVICE. THE
-          ONLY NETWORK REQUEST IS THE ONE THAT FETCHED THIS PAGE.
+      {/* ── the switcher — 01 / 02 with names ── */}
+      <nav
+        className="hairline-t z-30 flex h-14 shrink-0 items-center justify-between gap-3 bg-[var(--paper)] px-3 sm:px-8"
+        aria-label="Case files"
+      >
+        <button
+          onClick={() => go(idx - 1)}
+          className="mono flex h-10 min-w-0 items-center gap-2 px-2 text-[9.5px] tracking-[0.18em] text-faint transition-colors hover:text-ink"
+          title="Previous file"
+        >
+          <span className="text-[13px] leading-none">‹</span>
+          <span className="hidden min-w-0 truncate sm:inline">{prev.codename}</span>
+        </button>
+
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
+          {CASES.map((c, i) => {
+            const active = i === idx;
+            return (
+              <button
+                key={c.id}
+                onClick={() => go(i)}
+                aria-current={active}
+                className="mono relative flex h-10 items-center gap-2 px-2.5 text-[10px] tracking-[0.16em] transition-colors sm:px-3"
+                style={{ color: active ? "var(--ink)" : "var(--faint)" }}
+              >
+                <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                <span
+                  className={`hidden sm:inline ${active ? "font-semibold" : ""}`}
+                >
+                  {c.codename}
+                </span>
+                {active && (
+                  <span className="absolute inset-x-2 bottom-1.5 h-[2px] bg-signal" />
+                )}
+              </button>
+            );
+          })}
+          <span className="mono ml-2 hidden text-[8.5px] tracking-[0.2em] text-faint lg:inline">
+            ← → OR SWIPE
+          </span>
+        </div>
+
+        <button
+          onClick={() => go(idx + 1)}
+          className="mono flex h-10 min-w-0 items-center gap-2 px-2 text-[9.5px] tracking-[0.18em] text-faint transition-colors hover:text-ink"
+          title="Next file"
+        >
+          <span className="hidden min-w-0 truncate sm:inline">{next.codename}</span>
+          <span className="text-[13px] leading-none">›</span>
+        </button>
+      </nav>
+
+      {/* ── the bench footer ── */}
+      <footer className="hairline-t hidden shrink-0 items-center justify-between bg-[var(--paper)] px-8 py-2.5 md:flex">
+        <p className="mono text-[8.5px] tracking-[0.2em] text-mute">
+          NO ACCOUNT · NO DATABASE · NO ANALYTICS
         </p>
-        <p className="mono mt-4 text-[9.5px] tracking-[0.18em] text-mute">
-          TARAONCHAIN · {TUNE.chip} · SINGLE BUILD · {new Date().getFullYear()}
+        <p className="mono text-[8.5px] tracking-[0.14em] text-faint">
+          THE ONLY NETWORK REQUEST IS THE ONE THAT FETCHED THIS PAGE
+        </p>
+        <p className="mono text-[8.5px] tracking-[0.2em] text-mute">
+          TARAONCHAIN · {new Date().getFullYear()}
         </p>
       </footer>
     </div>

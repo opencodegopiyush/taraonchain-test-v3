@@ -7,7 +7,7 @@ import { NODE_COLORS, SCENE_BG } from "@/lib/palette";
 import type { CaseFile } from "@/lib/types";
 import { chapterEdgeSet, chapterFocusSet, project, type Cam, type Proj } from "./trace";
 
-/* ── TraceCanvas — v16 "STILL" ───────────────────────────────
+/* ── TraceCanvas — v19 "NIGHT SHIFT" ─────────────────────────
    the motion budget, enforced in code:
 
    · RENDER-ON-DEMAND — the rAF loop starts only when something
@@ -313,9 +313,10 @@ export default function TraceCanvas() {
     canvas.addEventListener("pointercancel", onUp);
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
-    /* ── flat print drawing ── */
-    const INK = "17, 17, 19";
-    const SIGNAL = "36, 64, 245";
+    /* ── flat print drawing — v19 night shift: bone strokes on
+       the ink-black bench, hot signal for the active story ── */
+    const INK = "236, 229, 220"; // bone
+    const SIGNAL = "255, 82, 51"; // signal red
 
     const rgba = (rgb: string, a: number) => `rgba(${rgb}, ${a})`;
 
