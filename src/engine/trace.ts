@@ -21,6 +21,18 @@ export interface Proj {
   scale: number;
 }
 
+/* the screen-space box the figure is framed inside. the plate
+   carries its own furniture (fig caption on the top edge, the
+   chapter ruler on the bottom edge) — the projection centers
+   the figure in the band that is actually visible, so no
+   bubble ever prints under the chrome. null = full canvas. */
+export interface ViewBox {
+  ox: number; // center x of the visible band
+  oy: number; // center y of the visible band
+  fw: number; // framing width  — drives focal length
+  fh: number; // framing height — drives focal length
+}
+
 type V3 = [number, number, number];
 
 const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -47,8 +59,27 @@ export function camPos(c: Cam): V3 {
   ];
 }
 
+/* the camera's orthonormal basis: forward (target − eye),
+   right, and up. lets screen-space corrections be translated
+   back into world-space target shifts. */
+export function camBasis(c: Cam): { f: V3; r: V3; u: V3 } {
+  const cp = camPos(c);
+  const f = norm3(sub3(c.target, cp));
+  let r = cross3(f, [0, 1, 0]);
+  if (Math.hypot(r[0], r[1], r[2]) < 1e-4) r = [1, 0, 0];
+  const rn = norm3(r);
+  const u = cross3(rn, f);
+  return { f, r: rn, u };
+}
+
 /* world → screen. null when the point is behind the camera. */
-export function project(p: V3, cam: Cam, w: number, h: number): Proj | null {
+export function project(
+  p: V3,
+  cam: Cam,
+  w: number,
+  h: number,
+  vb?: ViewBox,
+): Proj | null {
   const cp = camPos(cam);
   const f = norm3(sub3(cam.target, cp));
   let r = cross3(f, [0, 1, 0]);
@@ -60,9 +91,11 @@ export function project(p: V3, cam: Cam, w: number, h: number): Proj | null {
   if (z < 0.6) return null;
   const x = dot3(d, rn);
   const y = dot3(d, u);
-  const focal = Math.min(w, h) * 1.08;
+  const focal = Math.min(vb ? vb.fw : w, vb ? vb.fh : h) * 1.08;
   const s = focal / z;
-  return { x: w / 2 + x * s, y: h / 2 - y * s, depth: z, scale: s };
+  const cx = vb ? vb.ox : w / 2;
+  const cy = vb ? vb.oy : h / 2;
+  return { x: cx + x * s, y: cy - y * s, depth: z, scale: s };
 }
 
 /* deterministic 0..1 from a seed string — stable drift phases */

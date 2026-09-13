@@ -37,7 +37,7 @@ export type Tune = {
 };
 
 const DESKTOP_TUNE: Tune = {
-  chip: "V19 · NIGHT SHIFT",
+  chip: "ZERO TELEMETRY",
   /* hero trail — retired, landing carries no canvas */
   heroBubbles: 0,
   heroTrailLen: 0,
@@ -63,7 +63,7 @@ const DESKTOP_TUNE: Tune = {
 };
 
 const MOBILE_TUNE: Tune = {
-  chip: "V19 · NIGHT SHIFT",
+  chip: "ZERO TELEMETRY",
   heroBubbles: 0,
   heroTrailLen: 0,
   heroTrailAlpha: 0,

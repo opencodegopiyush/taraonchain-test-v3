@@ -95,7 +95,10 @@ function FilePlate({ cf, no, total }: { cf: CaseFile; no: number; total: number 
             [cf.amountUsd, "PEAK"],
           ] as [string | number, string][]
         ).map(([v, l]) => (
-          <div key={l} className="bg-[var(--paper)] px-3.5 py-3">
+          <div
+            key={l}
+            className={`bg-[var(--paper)] px-3.5 py-3 ${l === "PEAK" ? "col-span-2 sm:col-span-1" : ""}`}
+          >
             <p
               className={`mono text-[15px] font-semibold tabular-nums ${
                 l === "PEAK" ? "text-signal" : "text-ink"

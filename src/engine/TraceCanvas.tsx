@@ -5,7 +5,14 @@ import { useStore } from "@/lib/store";
 import { retune } from "@/lib/edition";
 import { NODE_COLORS, SCENE_BG } from "@/lib/palette";
 import type { CaseFile } from "@/lib/types";
-import { chapterEdgeSet, chapterFocusSet, project, type Cam, type Proj } from "./trace";
+import {
+  camBasis,
+  chapterEdgeSet,
+  chapterFocusSet,
+  project,
+  type Cam,
+  type Proj,
+} from "./trace";
 
 /* ── TraceCanvas — v19 "NIGHT SHIFT" ─────────────────────────
    the motion budget, enforced in code:
@@ -61,6 +68,13 @@ export default function TraceCanvas() {
     const anim = {
       cam: null as Cam | null,
       goal: null as Cam | null,
+      /* the authored camera each goal was contained from — kept so
+         a plate resize (split drag, rotate) can re-contain from the
+         authored framing instead of compounding zoom-outs */
+      base: null as Cam | null,
+      /* the user took the lens — containment stands down until the
+         next authored camera so their zoom is never yanked back */
+      userTouched: false,
       seqSeen: -1,
       selSeen: null as string | null,
       w: 0,
@@ -74,17 +88,114 @@ export default function TraceCanvas() {
       dragging: false,
     };
 
+    /* ── the visible band ──
+       the plate prints its own furniture onto the canvas: the fig
+       caption sits on the top edge, the chapter ruler owns the
+       bottom strip. the figure is framed inside the band that is
+       actually visible — this is the box the projection centers on
+       and the box containment keeps every relevant bubble inside. */
+    function safeBox() {
+      const top = anim.coarse ? 64 : 46; // fig caption (two lines on touch)
+      const bottom = 40; // the chapter ruler strip
+      const side = 12;
+      const bw = Math.max(60, anim.w - side * 2);
+      const bh = Math.max(60, anim.h - top - bottom);
+      return {
+        x0: side,
+        y0: top,
+        x1: side + bw,
+        y1: top + bh,
+        ox: side + bw / 2,
+        oy: top + bh / 2,
+        fw: bw,
+        fh: bh,
+      };
+    }
+
+    /* ── containment — the authored camera is honoured, never
+       hidden: chapter 01 is the establishing shot, so the WHOLE
+       figure must sit on the plate; every other chapter must at
+       least hold the actors it talks about. the pass only ever
+       pulls the lens back — target, tilt and framing stay exactly
+       as authored. the overflow shrinks monotonically as the lens
+       pulls back, so the MINIMAL fitting radius is found by
+       bisection — no over-zoom, ever. runs on every authored
+       camera and again when the plate changes size. */
+    function contain(c: Cam): Cam {
+      if (anim.w < 80 || anim.h < 80) return c; // plate not measured yet
+      const st = useStore.getState();
+      const establishing = st.chapter === 0;
+      const focus = chapterFocusSet(cf, st.chapter);
+      const box = safeBox();
+      const pad = 10;
+
+      const overAt = (r: number): number => {
+        const g: Cam = {
+          target: [...c.target] as [number, number, number],
+          radius: r,
+          theta: c.theta,
+          phi: c.phi,
+        };
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        let seen = 0;
+        for (const n of nodes) {
+          if (!establishing && focus.size > 0 && !focus.has(n.id)) continue;
+          const p = project(n.pos, g, anim.w, anim.h, box);
+          if (!p) continue; // behind the lens — pulling back never fixes it
+          seen++;
+          const pr = Math.max(3.2, Math.min(26, (n.size ?? 0.9) * 0.5 * p.scale));
+          if (p.x - pr < minX) minX = p.x - pr;
+          if (p.x + pr > maxX) maxX = p.x + pr;
+          if (p.y - pr < minY) minY = p.y - pr;
+          if (p.y + pr + 15 > maxY) maxY = p.y + pr + 15; // + label strip
+        }
+        if (seen === 0) return 0;
+        return Math.max(
+          box.x0 - pad - minX,
+          maxX - (box.x1 + pad),
+          box.y0 - pad - minY,
+          maxY - (box.y1 + pad),
+          0,
+        );
+      };
+
+      if (overAt(c.radius) <= 0) return c; // the authored framing already holds
+      let lo = c.radius;
+      let hi = Math.min(76, c.radius * 1.7);
+      for (let i = 0; i < 10 && hi < 76 && overAt(hi) > 0; i++) hi = Math.min(76, hi * 1.7);
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        if (overAt(mid) > 0) lo = mid;
+        else hi = mid;
+      }
+      return {
+        target: [...c.target] as [number, number, number],
+        radius: hi,
+        theta: c.theta,
+        phi: c.phi,
+      };
+    }
+
     /* ── sizing ── */
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       if (w === 0 || h === 0) return;
+      const grew = w !== anim.w || h !== anim.h;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       anim.w = w;
       anim.h = h;
       anim.dpr = dpr;
+      /* the plate changed shape — re-fit the authored framing into
+         the new band (the user's own zoom is left alone) */
+      if (grew && anim.base && !anim.userTouched) {
+        anim.goal = contain(anim.base);
+      }
       kick();
     };
     const ro = new ResizeObserver(resize);
@@ -152,12 +263,14 @@ export default function TraceCanvas() {
       const s = useStore.getState();
       if (s.camCmd && s.camCmd.seq !== anim.seqSeen) {
         anim.seqSeen = s.camCmd.seq;
-        anim.goal = {
+        anim.userTouched = false; // a fresh authored frame owns the lens again
+        anim.base = {
           target: [...s.camCmd.target] as [number, number, number],
           radius: s.camCmd.radius,
           theta: s.camCmd.theta,
           phi: s.camCmd.phi,
         };
+        anim.goal = contain(anim.base);
         if (!anim.cam) anim.cam = { ...anim.goal };
         /* v14 fix retained: a chapter switch IS an interaction —
            the authored camera must survive the ease. */
@@ -178,16 +291,42 @@ export default function TraceCanvas() {
         if (s.selectedNodeId) {
           const n = nodeById.get(s.selectedNodeId);
           if (n && anim.cam) {
-            /* the view recenters the tapped bubble so the info
-               card can never hide it. on touch layouts the card
-               sits at the bottom — bias the frame upward. */
-            const upBias = anim.w < 1024 ? 0.22 : 0;
-            anim.goal = {
-              target: [n.pos[0], n.pos[1] - upBias * Math.min(anim.cam.radius, 13), n.pos[2]],
-              radius: Math.min(anim.cam.radius, 13),
+            const radius = Math.min(anim.cam.radius, 13);
+            /* layout test, not plate test: in the 50/50 desk the
+               desktop plate is ~700px wide — only the VIEWPORT
+               tells mobile from desktop (same rule as the seam) */
+            const narrow = window.innerWidth < 1024;
+            /* the view recenters the tapped bubble so the record
+               can never hide it. touch layouts: the record lives in
+               the report half — bias the frame upward for breathing
+               room. desktop: the specimen card owns the plate's left
+               strip, so the bubble is framed into the open band
+               beside it. */
+            const g: Cam = {
+              target: [n.pos[0], n.pos[1] - (narrow ? 0.22 * radius : 0), n.pos[2]],
+              radius,
               theta: anim.cam.theta,
               phi: anim.cam.phi,
             };
+            if (!narrow) {
+              const box = safeBox();
+              const cardW = 376; // 340px card + margins
+              const p0 = project(n.pos, g, anim.w, anim.h, box);
+              if (p0 && box.x0 < cardW && box.x1 > cardW) {
+                const want = cardW + (box.x1 - cardW) / 2;
+                const dx = want - p0.x;
+                if (Math.abs(dx) > 4 && p0.scale > 0) {
+                  const rb = camBasis(g).r;
+                  const k = dx / p0.scale;
+                  g.target = [
+                    g.target[0] - rb[0] * k,
+                    g.target[1] - rb[1] * k,
+                    g.target[2] - rb[2] * k,
+                  ];
+                }
+              }
+            }
+            anim.goal = g;
           }
         }
         kick();
@@ -203,6 +342,7 @@ export default function TraceCanvas() {
     let lastTap = 0;
 
     const onDown = (e: PointerEvent) => {
+      anim.userTouched = true; // the lens is theirs now
       try {
         canvas.setPointerCapture(e.pointerId);
       } catch {
@@ -300,6 +440,7 @@ export default function TraceCanvas() {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      anim.userTouched = true;
       if (!anim.cam || !anim.goal) return;
       const r = clamp(anim.cam.radius * Math.exp(e.deltaY * 0.0011), 5, 58);
       anim.cam.radius = r;
@@ -341,14 +482,17 @@ export default function TraceCanvas() {
       ctx.fillStyle = SCENE_BG;
       ctx.fillRect(0, 0, w, h);
 
-      /* project */
+      /* project — through the visible band, never the raw box:
+         the caption and the ruler are plate furniture, and the
+         figure must not print underneath either */
+      const box = safeBox();
       const projs = new Map<string, Proj | null>();
       const order: { id: string; p: Proj; r: number }[] = [];
       anim.hit.length = 0;
 
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
-        const p = project(n.pos, cam, w, h); // no drift — the figure holds still
+        const p = project(n.pos, cam, w, h, box); // no drift — the figure holds still
         projs.set(n.id, p);
         if (!p) continue;
         const base = (n.size ?? 0.9) * 0.5;

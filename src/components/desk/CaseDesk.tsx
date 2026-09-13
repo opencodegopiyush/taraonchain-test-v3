@@ -76,8 +76,9 @@ export default function CaseDesk() {
             </p>
           </div>
 
-          {/* legend — desktop only; it crowds a half-height mobile plate */}
-          <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-5 lg:left-5 lg:flex">
+          {/* legend — desktop only; it crowds a half-height mobile plate.
+              bottom-14 clears the chapter ruler strip */}
+          <div className="absolute bottom-12 left-3 z-10 hidden flex-col items-start gap-2 lg:bottom-14 lg:left-5 lg:flex">
             <div className="flex flex-col gap-1 bg-[var(--paper)] px-2.5 py-2">
               <span className="mono flex items-center gap-1.5 text-[8.5px] tracking-[0.16em] text-ink-3">
                 <span
@@ -157,7 +158,7 @@ function Recenter() {
   return (
     <button
       onClick={recenter}
-      className="chip absolute bottom-12 right-3 z-10 cursor-pointer bg-[var(--paper)] px-2.5 py-2 transition-colors hover:border-ink hover:text-ink lg:bottom-5 lg:right-5"
+      className="chip absolute bottom-12 right-3 z-10 cursor-pointer bg-[var(--paper)] px-2.5 py-2 transition-colors hover:border-ink hover:text-ink lg:bottom-14 lg:right-5"
       title="Re-frame this chapter"
     >
       ↺ RECENTER
